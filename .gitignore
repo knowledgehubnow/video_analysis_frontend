@@ -2,6 +2,6 @@ __pycache__/
 *.pyc
 *.pyo
 db.sqlite3
-speeches/
-media/videos/
-media/images/
+speeches
+media/videos
+media/images
