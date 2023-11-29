@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+<head>
+    <title>Analyzed Video List</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+</head>
+<body>
+    <div class="container my-5">
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            {% for data in all_data %}
+            <div class="col">
+                <div class="card">
+                    <div>
+                        <video class="card-img-top" width="100%" height="200" controls>
+                            <source src="{{ data.video_file.url }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ data.name|truncatechars:20 }}</h5>
+                        <p class="card-text"><span class="fw-bold">Speech Rate:</span> <span class="badge bg-success">{{ data.word_per_minute }} </span>words/min.</p>
+                        <p class="card-text"><span class="fw-bold">Language Analysis:</span> <span class="badge bg-success">{{ data.language_analysis.sentiment }} </span></p>
+                        <p class="card-text"><span class="fw-bold">Voice Modulation Analysis:</span> <span class="badge bg-success">{{ data.voice_modulation_analysis.modulation_rating }} </span></p>
+                        <p class="card-text"><span class="fw-bold">Energy Level Analysis:</span> <span class="badge bg-success">{{ data.energy_level_analysis }} </span></p>
+                        <p class="card-text">
+                            <span class="fw-bold">Filler Words:</span> 
+                            {% for filler_word in data.filler_words %}
+                                <span class="badge bg-success">{{ filler_word }} </span>
+                            {% endfor %}
+                        </p>
+                        <p class="card-text">
+                            <span class="fw-bold">Frequently Used Words:</span> 
+                            {% for frequently_used in data.frequently_word %}
+                                <span class="badge bg-success">{{ frequently_used }} </span>
+                            {% endfor %}
+                        </p>
+                        <p class="card-text">
+                            <span class="fw-bold">Voice Emotion:</span> 
+                            {% for emo in data.get_voice_emotion %}
+                                <span class="badge bg-success">{{ emo }} </span>
+                            {% endfor %}
+                        </p>
+                    
+                        <h1><u>Feedback</u></h1>
+                        <p class="card-text">
+                            <span class="fw-bold">Eye Contact:</span> 
+                            {% if data.eye_contact != None %}
+                            <span class="badge bg-success">{{ data.eye_contact }} </span>
+                            {% else %}
+                            <span class="badge bg-danger">Eye contact not detected </span>
+                            {% endif %}
+                        </p>
+                        <p class="card-text">
+                            <span class="fw-bold">Hand Movement:</span> 
+                            {% if data.hand_movement != None %}
+                            <span class="badge bg-success">{{ data.hand_movement }} </span>
+                            {% else %}
+                            <span class="badge bg-danger">Hand not moving </span>
+                            {% endif %}
+                        </p>
+                        <p class="card-text">
+                            <span class="fw-bold">Eye Bling:</span> 
+                            {% if data.eye_bling != None %}
+                            <span class="badge bg-danger">{{ data.eye_bling }} </span>
+                            {% else %}
+                            <span class="badge bg-success">Eye Blinging </span>
+                            {% endif %}
+                        </p>
+                        <p class="card-text">
+                            <span class="fw-bold">Body Confidence:</span> 
+                            {% if data.confidence != None %}
+                            <span class="badge bg-success">{{ data.confidence }} </span>
+                            {% else %}
+                            <span class="badge bg-danger">Not confident body posture </span>
+                            {% endif %}
+                        </p>
+                        <p class="card-text">
+                            <span class="fw-bold">Thanks Gesture:</span> 
+                            {% if data.thanks_gesture != None %}
+                            <span class="badge bg-success">{{ data.thanks_gesture }} </span>
+                            {% else %}
+                            <span class="badge bg-danger">Thanking gesture is not included </span>
+                            {% endif %}
+                        </p>
+                        <p class="card-text">
+                            <span class="fw-bold">Greeting:</span> 
+                            {% if data.greeting != None %}
+                            <span class="badge bg-success">{{ data.greeting }} </span>
+                            {% else %}
+                            <span class="badge bg-danger">Greeting not included </span>
+                            {% endif %}
+                        </p>
+                        <p class="card-text">
+                            <span class="fw-bold">Greeting Gesture:</span> 
+                            {% if data.greeting_gesture != None %}
+                            <span class="badge bg-success">{{ data.greeting_gesture }} </span>
+                            {% else %}
+                            <span class="badge bg-danger">Include greeting gesture </span>
+                            {% endif %}
+                        </p>
+                        <p class="card-text">
+                            <span class="fw-bold">Voice Monotone:</span> 
+                            {% if data.voice_tone == "Voice is clear." %}
+                            <span class="badge bg-success">{{data.voice_tone}} </span>
+                            {% else %}
+                            <span class="badge bg-danger">{{data.voice_tone}} </span>
+                            {% endif %}
+                        </p>
+                        <p class="card-text">
+                            <span class="fw-bold">Voice Pauses:</span> 
+                            {% if data.voice_pauses == "Pauses seem natural" %}
+                            <span class="badge bg-success">{{data.voice_pauses}} </span>
+                            {% else %}
+                            <span class="badge bg-danger">{{data.voice_pauses}} </span>
+                            {% endif %}
+                        </p>
+                        <p class="card-text">
+                            <span class="fw-bold">Face Detection:</span> 
+                            {% if data.appropriate_facial == "Appropriate Facial Detected." %}
+                            <span class="badge bg-success">{{data.appropriate_facial}} </span>
+                            {% else %}
+                            <span class="badge bg-danger">{{data.appropriate_facial}} </span>
+                            {% endif %}
+                        </p>
+                        <p class="card-text">
+                            <span class="fw-bold">Body Posture:</span> 
+                            {% if data.body_posture == "Good Body Posture" %}
+                            <span class="badge bg-success">{{data.body_posture}} </span>
+                            {% else %}
+                            <span class="badge bg-danger">{{data.body_posture}} </span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+          </div>
+    </div>
+</body>
+</html>
