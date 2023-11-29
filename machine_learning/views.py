@@ -1547,7 +1547,7 @@ def scan_live_face(request):
         print(e)
         pass
     try:
-        print("dnbcje89vyubv")
+        print(output_filename)
         # os.remove(video_output_file)
         os.remove(output_filename)
         # os.remove(audio_file_path)
