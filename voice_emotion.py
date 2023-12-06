@@ -60,7 +60,9 @@ observed_emotions = ['neutral', 'positive', 'sad', 'angry']
 # Function to load and preprocess data
 def load_data(test_size=0.2):
     x, y = [], []
-    for file in glob.glob("/home/manish/Desktop/monteage/mont_project/speech-emotion-recognition-ravdess-data/Actor_*/*.wav"):
+    dataset = "speech-emotion-recognition-ravdess-data/Actor_*/*.wav"
+    print(dataset)
+    for file in glob.glob(dataset):
         file_name = os.path.basename(file)
         emotion = emotions[file_name.split("-")[2]]
         if emotion not in observed_emotions:
