@@ -412,6 +412,7 @@ def scan_face(request):
                 pass
             return redirect("analized_video_detail",data.id)
         else:
+            os.remove(f"{video_file}")
             return render(request, 'upload.html', {
                 "message": "Video already exists with this name and this video data shown below.",
                 "tag": "info",
@@ -766,13 +767,20 @@ def analyze_voice_modulation(audio_file_path):
 
     pitch = audio.dBFS
 
+    # Check if pitch is -inf and handle it
+    if pitch == float('-inf'):
+        pitch = None
+
     # You can define your own criteria for rating voice modulation
-    if pitch > -12:
-        modulation_rating = "Excellent"
-    elif -12 >= pitch >= -25:
-        modulation_rating = "Good"
+    if pitch is not None:
+        if pitch > -12:
+            modulation_rating = "Excellent"
+        elif -12 >= pitch >= -25:
+            modulation_rating = "Good"
+        else:
+            modulation_rating = "Needs Improvement"
     else:
-        modulation_rating = "Needs Improvement"
+        modulation_rating = "Not Available"
 
     return {
         "duration_seconds": len(audio) / 1000,  # Duration in seconds
@@ -780,6 +788,7 @@ def analyze_voice_modulation(audio_file_path):
         "modulation_rating": modulation_rating,
         # Add more voice modulation characteristics as needed
     }
+
 
 # def voice_quality(audio_file_path):
 #     # Load your audio file
@@ -846,6 +855,7 @@ def calculate_speech_rate(audio_file_path):
 
     with sr.AudioFile(audio_file_path) as source:
         audio_data = recognizer.record(source)
+    
     try:
         text = recognizer.recognize_google(audio_data)
         word_count = len(text.split())
@@ -858,9 +868,16 @@ def calculate_speech_rate(audio_file_path):
     # Assume speech duration is the length of the audio in seconds
     speech_duration = len(audio_data.frame_data) / frame_rate
 
-    # Calculate speech rate in words per minute
-    speech_rate = (word_count / speech_duration) * 60
+    # Check if speech_duration is zero before calculating speech rate
+    if speech_duration == 0:
+        # Handle the case where speech_duration is zero (e.g., empty audio file)
+        speech_rate = 0
+    else:
+        # Calculate speech rate in words per minute
+        speech_rate = (word_count / speech_duration) * 60
+
     return speech_rate
+
 
 def analized_video_detail(request,video_id):
     try:
@@ -1274,6 +1291,7 @@ def analyse_video(video_file):
                 pass
             return data_id
         else:
+            os.remove(f"{video_file}")
             return None
         
 
