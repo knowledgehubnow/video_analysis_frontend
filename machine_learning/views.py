@@ -588,12 +588,20 @@ def detect_voice_pauses(audio_file_path):
 
     # Calculate total voice duration with pauses
     total_voice_duration_with_pauses = len(audio)
-    ratio = total_voice_duration_without_pauses/total_voice_duration_with_pauses
+
+    # Check if total_voice_duration_with_pauses is zero before calculating the ratio
+    if total_voice_duration_with_pauses == 0:
+        # Handle the case where total_voice_duration_with_pauses is zero
+        return "Unable to detect pauses"
+
+    # Calculate the ratio of voice duration without pauses to total voice duration
+    ratio = total_voice_duration_without_pauses / total_voice_duration_with_pauses
 
     if 0.5 < ratio < 0.9:
         return "Pauses seem natural"
     else:
         return "Pauses seem unnatural"
+
 
 
 def voice_emotion(audio_file_path):
