@@ -1542,11 +1542,17 @@ def scan_live_face(request):
     else:
         pass
     total_len = total_detected_time + total_not_detected_time
-    ratio = total_detected_time/total_len
-    if ratio > 0.5:
-        face_detected = "Appropriate Facial Detected."
+
+    # Check if total_len is zero before calculating the ratio
+    if total_len == 0:
+        # Handle the case where total_len is zero
+        face_detected = "Unable to determine facial detection"
     else:
-        face_detected = "Appropriate Facial Not Detected."
+        ratio = total_detected_time / total_len
+        if ratio > 0.5:
+            face_detected = "Appropriate Facial Detected."
+        else:
+            face_detected = "Appropriate Facial Not Detected."
     
     try:
         video_data = VideoRecognition.objects.get(id = video_output_file)
@@ -1959,11 +1965,17 @@ def analyse_live():
     else:
         pass
     total_len = total_detected_time + total_not_detected_time
-    ratio = total_detected_time/total_len
-    if ratio > 0.5:
-        face_detected = "Appropriate Facial Detected."
+
+    # Check if total_len is zero before calculating the ratio
+    if total_len == 0:
+        # Handle the case where total_len is zero
+        face_detected = "Unable to determine facial detection"
     else:
-        face_detected = "Appropriate Facial Not Detected."
+        ratio = total_detected_time / total_len
+        if ratio > 0.5:
+            face_detected = "Appropriate Facial Detected."
+        else:
+            face_detected = "Appropriate Facial Not Detected."
     
     try:
         video_data = VideoRecognition.objects.get(id = video_output_file)
