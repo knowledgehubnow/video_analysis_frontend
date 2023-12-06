@@ -17,8 +17,8 @@ class ImageRecognition(models.Model):
 class VideoRecognition(models.Model):
     name = models.CharField(max_length=255, null=True, blank=True)
     word_per_minute = models.FloatField(null=True, blank=True)
-    language_analysis = models.JSONField(null=True, blank=True)
-    voice_modulation_analysis = models.JSONField(null=True, blank=True)
+    language_analysis = models.JSONField(null=True, blank=True,default=None)
+    voice_modulation_analysis = models.JSONField(null=True, blank=True, default=None)
     energy_level_analysis = models.CharField(max_length=255, null=True, blank=True)
     video_file = models.FileField(upload_to='videos/', null=True, blank=True)
     filler_words_used = models.TextField(null=True, blank=True)
