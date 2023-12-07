@@ -1643,35 +1643,42 @@ def save_audio(frames, output_file):
 # Audio recording code end **************************************
 from django.core.files import File
 from django.core.files.base import ContentFile
+
 def merge_audio_video(video_filename, audio_filename):
-    # Get the desired video title
-    title = str(uuid.uuid4())
-    # Open the video and audio
-    video_clip = VideoFileClip(video_filename)
-    audio_clip = AudioFileClip(audio_filename)
-    # Set the audio of the video clip
-    video_clip = video_clip.set_audio(audio_clip)
-    # Export the final video with audio
-    # output_filename = f"{title}.mp4"
-    output_filename=os.path.join(project_root_dir, f"{title}.mp4")
-    print("#########################################",output_filename)
-    video_clip.write_videofile(output_filename, codec='libx264', audio_codec='aac')
-    # Create an instance of the Video model
-    video = VideoRecognition()
-    # Open the video file
-    with open(output_filename, 'rb') as f:
-        # Assign the video file to the model's FileField
-        video.video_file.save(os.path.basename(output_filename), File(f), save=False)
-    # Set the title of the video (you can adjust this based on your requirements)
-    video.name = output_filename
-    # Save the Video model
-    video.save()
-    os.remove(output_filename)
-    return video.id
-    # except Exception as e:
-    #     print(f"Error: {e}")
-    #     return None
-    
+    try:
+        # Open the video and audio
+        video_clip = VideoFileClip(video_filename)
+        audio_clip = AudioFileClip(audio_filename)
+        # Set the audio of the video clip
+        video_clip = video_clip.set_audio(audio_clip)
+        # Get the desired video title
+        title = str(uuid.uuid4())
+        # Export the final video with audio
+        output_filename = os.path.join(project_root_dir, f"{title}.mp4")
+        print("#########################################", output_filename)
+        # Write the video file temporarily
+        temp_output_filename = os.path.join(project_root_dir, f"temp_{title}.mp4")
+        video_clip.write_videofile(temp_output_filename, codec='libx264', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True)
+        
+        # Create an instance of the Video model
+        video = VideoRecognition()
+        # Open the temporary video file
+        with open(temp_output_filename, 'rb') as f:
+            # Assign the video file to the model's FileField
+            video.video_file.save(os.path.basename(temp_output_filename), File(f), save=False)
+        # Set the title of the video (you can adjust this based on your requirements)
+        video.name = temp_output_filename
+        # Save the Video model
+        video.save()
+        
+        # Clean up temporary files
+        os.remove(temp_output_filename)
+        
+        return video.id
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
+
 
 # API For Live Video Analysis ###############################################################
 
