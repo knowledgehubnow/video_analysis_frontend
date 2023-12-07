@@ -1553,7 +1553,7 @@ def scan_live_face(request):
             face_detected = "Appropriate Facial Detected."
         else:
             face_detected = "Appropriate Facial Not Detected."
-    video_data = None
+    # video_data = None
     try:
         video_data = VideoRecognition.objects.get(id = video_output_file)
         video_data.language_analysis= language_analysis
@@ -1640,38 +1640,31 @@ def save_audio(frames, output_file):
 from django.core.files import File
 from django.core.files.base import ContentFile
 def merge_audio_video(video_filename, audio_filename):
-    try:
-        # Get the desired video title
-        title = str(uuid.uuid4())
-
-        # Open the video and audio
-        video_clip = VideoFileClip(video_filename)
-        audio_clip = AudioFileClip(audio_filename)
-
-        # Set the audio of the video clip
-        video_clip = video_clip.set_audio(audio_clip)
-
-        # Export the final video with audio
-        output_filename = f"{title}.mp4"
-        video_clip.write_videofile(output_filename, codec='libx264', audio_codec='aac')
-        # Create an instance of the Video model
-        video = VideoRecognition()
-
-        # Open the video file
-        with open(output_filename, 'rb') as f:
-            # Assign the video file to the model's FileField
-            video.video_file.save(os.path.basename(output_filename), File(f), save=False)
-
-        # Set the title of the video (you can adjust this based on your requirements)
-
-        video.name = output_filename
-        # Save the Video model
-        video.save()
-        os.remove(output_filename)
-        return video.id
-    except Exception as e:
-        print(f"Error: {e}")
-        return None
+    # Get the desired video title
+    title = str(uuid.uuid4())
+    # Open the video and audio
+    video_clip = VideoFileClip(video_filename)
+    audio_clip = AudioFileClip(audio_filename)
+    # Set the audio of the video clip
+    video_clip = video_clip.set_audio(audio_clip)
+    # Export the final video with audio
+    output_filename = f"{title}.mp4"
+    video_clip.write_videofile(output_filename, codec='libx264', audio_codec='aac')
+    # Create an instance of the Video model
+    video = VideoRecognition()
+    # Open the video file
+    with open(output_filename, 'rb') as f:
+        # Assign the video file to the model's FileField
+        video.video_file.save(os.path.basename(output_filename), File(f), save=False)
+    # Set the title of the video (you can adjust this based on your requirements)
+    video.name = output_filename
+    # Save the Video model
+    video.save()
+    os.remove(output_filename)
+    return video.id
+    # except Exception as e:
+    #     print(f"Error: {e}")
+    #     return None
     
 
 # API For Live Video Analysis ###############################################################
