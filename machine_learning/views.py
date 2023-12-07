@@ -1553,31 +1553,31 @@ def scan_live_face(request):
             face_detected = "Appropriate Facial Detected."
         else:
             face_detected = "Appropriate Facial Not Detected."
-    # video_data = None
-    # try:
-    video_data = VideoRecognition.objects.get(id = video_output_file)
-    video_data.language_analysis= language_analysis
-    video_data.voice_modulation_analysis = voice_modulation
-    video_data.energy_level_analysis= energy_category
-    video_data.word_per_minute=speech_rate
-    video_data.filler_words_used=filler_words_string
-    video_data.frequently_used_word=frequently_used_words
-    video_data.voice_emotion = voice_emo
-    video_data.confidence = b_confidence
-    video_data.eye_bling = eye_bling
-    video_data.hand_movement= hand_move
-    video_data.eye_contact=eye_contact
-    video_data.thanks_gesture=thanks
-    video_data.greeting=greeting
-    video_data.greeting_gesture=greet_gesture
-    video_data.voice_tone = monotone
-    video_data.voice_pauses=pauses
-    video_data.appropriate_facial = face_detected
-    video_data.body_posture=body_posture
-    video_data.save()
-    # except Exception as e:
-    #     print(e)
-    #     pass
+    video_data = None
+    try:
+        video_data = VideoRecognition.objects.get(id = video_output_file)
+        video_data.language_analysis= language_analysis
+        video_data.voice_modulation_analysis = voice_modulation
+        video_data.energy_level_analysis= energy_category
+        video_data.word_per_minute=speech_rate
+        video_data.filler_words_used=filler_words_string
+        video_data.frequently_used_word=frequently_used_words
+        video_data.voice_emotion = voice_emo
+        video_data.confidence = b_confidence
+        video_data.eye_bling = eye_bling
+        video_data.hand_movement= hand_move
+        video_data.eye_contact=eye_contact
+        video_data.thanks_gesture=thanks
+        video_data.greeting=greeting
+        video_data.greeting_gesture=greet_gesture
+        video_data.voice_tone = monotone
+        video_data.voice_pauses=pauses
+        video_data.appropriate_facial = face_detected
+        video_data.body_posture=body_posture
+        video_data.save()
+    except Exception as e:
+        print(e)
+        pass
     try:
         print(output_filename)
         # os.remove(video_output_file)
@@ -1588,31 +1588,6 @@ def scan_live_face(request):
         print(e)
         pass
     return redirect("analized_video_detail",video_data.id)
-
-# # Load the pre-trained emotion detection model
-# emotion_model = load_model("best_model.h5")
-
-# def emotion_detection(face_cascade, image):
-#     gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-#     faces_detected = face_cascade.detectMultiScale(gray_img, 1.32, 5)
-#     for (x, y, w, h) in faces_detected:
-#         roi_gray = gray_img[y:y + w, x:x + h]  # cropping region of interest i.e. face area from  image
-#         roi_rgb = cv2.cvtColor(roi_gray, cv2.COLOR_GRAY2RGB)  # convert to RGB
-#         roi_rgb = cv2.resize(roi_rgb, (224, 224))  # resize to (224, 224)
-#         img_pixels = np.expand_dims(roi_rgb, axis=0)
-#         img_pixels = img_pixels / 255.0  # Normalize pixel values to [0, 1]
-
-#         predictions = emotion_model.predict(img_pixels)
-
-#         # find max indexed array
-#         max_index = np.argmax(predictions[0])
-
-#         emotions = ('angry', 'disgust', 'fear', 'happy', 'sad', 'surprise', 'neutral')
-#         predicted_emotion = emotions[max_index]
-#         return predicted_emotion
-#     return None
-
-
 
 
 # Audio recording code start from here **************************************
@@ -1977,6 +1952,7 @@ def analyse_live():
         else:
             face_detected = "Appropriate Facial Not Detected."
     
+    video_data = None
     try:
         video_data = VideoRecognition.objects.get(id = video_output_file)
         video_data.language_analysis= language_analysis
@@ -2285,6 +2261,7 @@ def analyse_live_video(video_file):
     else:
         face_detected = "Appropriate Facial Not Detected."
     
+    video_data = None
     try:
         video_data = VideoRecognition.objects.get(id = video_output_file)
         video_data.language_analysis= language_analysis
