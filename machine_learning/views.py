@@ -1319,7 +1319,9 @@ def scan_live_face(request):
 
     # Create a VideoWriter object to save the video
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # You can use other codecs like MJPG, DIVX, etc.
-    output_filename=f'record_video_{uuid.uuid4()}.mp4'
+    # output_filename=f'record_video_{uuid.uuid4()}.mp4'
+    output_filename = os.path.join(f'record_video_{uuid.uuid4()}.mp4')
+    print("uivjfvkfvjlufvvvhfvjfjvhfkvnkfvfhhgfhvfu",output_filename)
     video_output = cv2.VideoWriter(output_filename, fourcc, fps, (frame_width, frame_height))
     # Variables
     blink_thresh = 0.45
