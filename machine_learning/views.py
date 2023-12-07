@@ -1598,7 +1598,9 @@ CHUNK_SIZE = 1024
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100
-OUTPUT_FILE_PATH = f'speeches/record_audio_{uuid.uuid4()}.wav'
+# OUTPUT_FILE_PATH = f'speeches/record_audio_{uuid.uuid4()}.wav'
+OUTPUT_FILE_PATH = os.path.join(project_root_dir, f'speeches/record_audio_{uuid.uuid4()}.wav')
+print("******************************",OUTPUT_FILE_PATH)
 
 # Add a global variable to signal when to stop recording
 stop_recording = False
@@ -1650,7 +1652,9 @@ def merge_audio_video(video_filename, audio_filename):
     # Set the audio of the video clip
     video_clip = video_clip.set_audio(audio_clip)
     # Export the final video with audio
-    output_filename = f"{title}.mp4"
+    # output_filename = f"{title}.mp4"
+    output_filename=os.path.join(project_root_dir, f"{title}.mp4")
+    print("#########################################",output_filename)
     video_clip.write_videofile(output_filename, codec='libx264', audio_codec='aac')
     # Create an instance of the Video model
     video = VideoRecognition()
