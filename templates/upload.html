@@ -18,14 +18,14 @@
                     {{message}}
                 </div>
                 {% endif %}
-                <div class="card">
+                {% comment %} <div class="card">
                     <div class="card-header text-center fw-bold">
                         Analyze Live Video
                     </div>
                     <div class="card-body text-center">
                         <a href="{% url 'scan_live_face' %}"><button type="button" class="btn btn-secondary" onclick="showSpinner()">Click Here For Analyzed Videos</button></a>
                     </div>
-                </div>
+                </div> {% endcomment %}
                 <h1 class="text-center">OR</h1>
                 <div class="card">
                     <div class="card-header text-center fw-bold">
