@@ -362,18 +362,18 @@ def scan_face(request):
                 
                 # Write the frame to the output video.
                 video_output.write(image)
-                new_width = 500
-                new_height = 600
+                # new_width = 500
+                # new_height = 600
 
-                # Resize the image
-                resized_image = cv2.resize(image, (new_width, new_height))
+                # # Resize the image
+                # resized_image = cv2.resize(image, (new_width, new_height))
 
-                # Display the frame.
-                cv2.imshow('Video', resized_image)
+                # # Display the frame.
+                # cv2.imshow('Video', resized_image)
 
-                # Break the loop if 'q' key is pressed.
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
+                # # Break the loop if 'q' key is pressed.
+                # if cv2.waitKey(1) & 0xFF == ord('q'):
+                #     break
                 
             # Release video capture and writer objects.
             cap.release()
@@ -1320,8 +1320,7 @@ def scan_live_face(request):
     # Create a VideoWriter object to save the video
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # You can use other codecs like MJPG, DIVX, etc.
     output_filename=os.path.join(project_root_dir, f'record_video_{uuid.uuid4()}.mp4')
-    # output_filename = os.path.join(f'record_video_{uuid.uuid4()}.mp4')
-    print("uivjfvkfvjlufvvvhfvjfjvhfkvnkfvfhhgfhvfu",output_filename)
+
     video_output = cv2.VideoWriter(output_filename, fourcc, fps, (frame_width, frame_height))
     # Variables
     blink_thresh = 0.45
@@ -1600,7 +1599,6 @@ CHANNELS = 1
 RATE = 44100
 # OUTPUT_FILE_PATH = f'speeches/record_audio_{uuid.uuid4()}.wav'
 OUTPUT_FILE_PATH = os.path.join(project_root_dir, f'speeches/record_audio_{uuid.uuid4()}.wav')
-print("******************************",OUTPUT_FILE_PATH)
 
 # Add a global variable to signal when to stop recording
 stop_recording = False
@@ -1643,39 +1641,34 @@ def save_audio(frames, output_file):
 # Audio recording code end **************************************
 from django.core.files import File
 from django.core.files.base import ContentFile
-
 def merge_audio_video(video_filename, audio_filename):
+    # Get the desired video title
+    title = str(uuid.uuid4())
     # Open the video and audio
     video_clip = VideoFileClip(video_filename)
     audio_clip = AudioFileClip(audio_filename)
     # Set the audio of the video clip
     video_clip = video_clip.set_audio(audio_clip)
-    # Get the desired video title
-    title = str(uuid.uuid4())
     # Export the final video with audio
-    output_filename = os.path.join(project_root_dir, f"{title}.mp4")
-    print("#########################################", output_filename)
-    # Write the video file temporarily
-    temp_output_filename = os.path.join(project_root_dir, f"temp_{title}.mp4")
-    video_clip.write_videofile(temp_output_filename, codec='libx264', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True)
-    
+    # output_filename = f"{title}.mp4"
+    output_filename=os.path.join(project_root_dir, f"{title}.mp4")
+    video_clip.write_videofile(output_filename, codec='libx264', audio_codec='aac')
     # Create an instance of the Video model
     video = VideoRecognition()
-    # Open the temporary video file
-    with open(temp_output_filename, 'rb') as f:
+    # Open the video file
+    with open(output_filename, 'rb') as f:
         # Assign the video file to the model's FileField
-        video.video_file.save(os.path.basename(temp_output_filename), File(f), save=False)
+        video.video_file.save(os.path.basename(output_filename), File(f), save=False)
     # Set the title of the video (you can adjust this based on your requirements)
-    video.name = temp_output_filename
+    video.name = output_filename
     # Save the Video model
     video.save()
-    
-    # Clean up temporary files
-    os.remove(temp_output_filename)
-    
+    os.remove(output_filename)
     return video.id
-
-
+    # except Exception as e:
+    #     print(f"Error: {e}")
+    #     return None
+    
 
 # API For Live Video Analysis ###############################################################
 
