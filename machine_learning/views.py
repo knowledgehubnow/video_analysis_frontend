@@ -1528,8 +1528,10 @@ def scan_live_face(request):
     emo_list = emo.tolist() if isinstance(emo, np.ndarray) else emo
     # Convert to JSON
     voice_emo = json.dumps(emo_list)
-
-    video_output_file = merge_audio_video(output_filename,OUTPUT_FILE_PATH)
+    try:
+        video_output_file = merge_audio_video(output_filename,OUTPUT_FILE_PATH)
+    except:
+        video_output_file = None
 
     body_posture = None
     if good_posture_time > 0:
@@ -2184,19 +2186,19 @@ def analyse_live_video(video_file):
 
         # Write the frame to the output video.
         video_output.write(image)
-        new_width = 500
-        new_height = 600
+        # new_width = 500
+        # new_height = 600
 
-        # Resize the image
-        resized_image = cv2.resize(image, (new_width, new_height))
+        # # Resize the image
+        # resized_image = cv2.resize(image, (new_width, new_height))
 
-        # Display the frame.
-        cv2.imshow('Video', resized_image)
+        # # Display the frame.
+        # cv2.imshow('Video', resized_image)
 
-        # Break the loop if 'q' key is pressed.
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            stop_recording = True
-            break
+        # # Break the loop if 'q' key is pressed.
+        # if cv2.waitKey(1) & 0xFF == ord('q'):
+        #     stop_recording = True
+        #     break
 
     # Release video capture and writer objects.
     cap.release()
