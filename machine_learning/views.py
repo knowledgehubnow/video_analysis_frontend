@@ -1030,9 +1030,6 @@ class VideoUploadView(APIView):
     
 def analyse_video(video_file):
     # Create a temporary file to store the uploaded video
-        with open(f"{video_file}", 'wb') as temp_file:
-            for chunk in video_file.chunks():
-                temp_file.write(chunk)
 
         try:
             video_data = VideoRecognition.objects.get(name=f"{video_file}")
@@ -1556,7 +1553,7 @@ def scan_live_face(request):
             face_detected = "Appropriate Facial Detected."
         else:
             face_detected = "Appropriate Facial Not Detected."
-    # video_data = None
+    video_data = None
     try:
         video_data = VideoRecognition.objects.get(id = video_output_file)
         video_data.language_analysis= language_analysis
@@ -1923,8 +1920,10 @@ def analyse_live():
     emo_list = emo.tolist() if isinstance(emo, np.ndarray) else emo
     # Convert to JSON
     voice_emo = json.dumps(emo_list)
-
-    video_output_file = merge_audio_video(output_filename,OUTPUT_FILE_PATH)
+    try:
+        video_output_file = merge_audio_video(output_filename,OUTPUT_FILE_PATH)
+    except:
+        video_output_file = None
 
     body_posture = None
     if good_posture_time > 0:
@@ -2204,20 +2203,14 @@ def analyse_live_video(video_file):
     cap.release()
     video_output.release()
     cv2.destroyAllWindows()
-    # Stop recording audio
-    stop_recording = True
-    audio_thread.join()
+    
+    audio_file_path = generate_audio_file(f"{video_file}")
 
-    # Save the recorded audio
-    save_audio(audio_frames, OUTPUT_FILE_PATH)
-    print(f"Audio saved to {OUTPUT_FILE_PATH}")
-
-    print(OUTPUT_FILE_PATH)
-    language_analysis, voice_modulation,energy_category,filler_words,words_list,greeting_words = analyze_language_and_voice(OUTPUT_FILE_PATH)
+    language_analysis, voice_modulation,energy_category,filler_words,words_list,greeting_words = analyze_language_and_voice(audio_file_path)
     # Get speech rate
-    speech_rate = calculate_speech_rate(OUTPUT_FILE_PATH)
-    monotone = voice_monotone(OUTPUT_FILE_PATH)
-    pauses = detect_voice_pauses(OUTPUT_FILE_PATH)
+    speech_rate = calculate_speech_rate(audio_file_path)
+    monotone = voice_monotone(audio_file_path)
+    pauses = detect_voice_pauses(audio_file_path)
     print(f"Speech rate: {speech_rate:.2f} words/min")
     print("Language Analysis:", language_analysis)
     print("energy_level Analysis:", energy_category)
@@ -2233,13 +2226,12 @@ def analyse_live_video(video_file):
         greeting = None
     frequently_used_words = json.dumps(words_list)
     filler_words_string = json.dumps(filler_words)
-    emo = voice_emotion(OUTPUT_FILE_PATH)
+    emo = voice_emotion(audio_file_path)
     # Convert NumPy array to Python list
     emo_list = emo.tolist() if isinstance(emo, np.ndarray) else emo
     # Convert to JSON
     voice_emo = json.dumps(emo_list)
 
-    video_output_file = merge_audio_video(output_filename,OUTPUT_FILE_PATH)
 
     body_posture = None
     if good_posture_time > 0:
@@ -2258,30 +2250,12 @@ def analyse_live_video(video_file):
         face_detected = "Appropriate Facial Detected."
     else:
         face_detected = "Appropriate Facial Not Detected."
-    
-    video_data = None
+
     try:
-        video_data = VideoRecognition.objects.get(id = video_output_file)
-        video_data.language_analysis= language_analysis
-        video_data.voice_modulation_analysis = voice_modulation
-        video_data.energy_level_analysis= energy_category
-        video_data.word_per_minute=speech_rate
-        video_data.filler_words_used=filler_words_string
-        video_data.frequently_used_word=frequently_used_words
-        video_data.voice_emotion = voice_emo
-        video_data.confidence = b_confidence
-        video_data.eye_bling = eye_bling
-        video_data.hand_movement= hand_move
-        video_data.eye_contact=eye_contact
-        video_data.thanks_gesture=thanks
-        video_data.greeting=greeting
-        video_data.greeting_gesture=greet_gesture
-        video_data.voice_tone = monotone
-        video_data.voice_pauses=pauses
-        video_data.appropriate_facial = face_detected
-        video_data.body_posture=body_posture
-        video_data.save()
-        data_id = video_data.id
+        data = VideoRecognition(name=video_file,language_analysis= language_analysis,voice_modulation_analysis = voice_modulation,energy_level_analysis= energy_category,video_file=video_file, word_per_minute=speech_rate,filler_words_used=filler_words_string,frequently_used_word=frequently_used_words,voice_emotion = voice_emo,
+                                        confidence = b_confidence,eye_bling = eye_bling,hand_movement= hand_move,eye_contact=eye_contact,thanks_gesture=thanks,greeting=greeting,greeting_gesture=greet_gesture,voice_tone = monotone,voice_pauses=pauses,appropriate_facial = face_detected,body_posture=body_posture)
+        data.save()
+        data_id = data.id
     except Exception as e:
         print(e)
         data_id = None
@@ -2289,7 +2263,7 @@ def analyse_live_video(video_file):
         os.remove(f"{video_file}")
         os.remove(output_filename)
         # os.remove(audio_file_path)
-        os.remove(OUTPUT_FILE_PATH)
+        os.remove(audio_file_path)
     except Exception as e:
         print(e)
         pass
