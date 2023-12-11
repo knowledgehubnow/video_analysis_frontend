@@ -134,12 +134,12 @@ def scan_face(request):
 
     if request.method == 'POST':
         video_file = request.FILES['video']
-        if video_file.size > 1024 * 1024:
-            print("jdhguguer")
-            return render(request, 'upload.html', {
-                "message": "Video Size should be upto 1MB.",
-                "tag": "danger",
-            })
+        # if video_file.size > 1024 * 1024:
+        #     print("jdhguguer")
+        #     return render(request, 'upload.html', {
+        #         "message": "Video Size should be upto 1MB.",
+        #         "tag": "danger",
+        #     })
         # Create a temporary file to store the uploaded video
         with open(f"{video_file}", 'wb') as temp_file:
             for chunk in video_file.chunks():
