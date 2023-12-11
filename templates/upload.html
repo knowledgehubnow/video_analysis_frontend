@@ -13,8 +13,8 @@
                     <a href="{% url 'analyze_pdf' %}"><button type="button" class="btn btn-secondary">Analyze PDF</button></a>
                     <a href="{% url 'analized_video_list' %}"><button type="button" class="btn btn-warning">Analyzed Videos List</button></a>
                 </div>
-                {% if video_data %}
-                <div class="alert alert-info text-center" role="alert">
+                {% if message %}
+                <div class="alert alert-{{tag}} text-center" role="alert">
                     {{message}}
                 </div>
                 {% endif %}

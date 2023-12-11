@@ -134,7 +134,12 @@ def scan_face(request):
 
     if request.method == 'POST':
         video_file = request.FILES['video']
-
+        if video_file.size > 1024 * 1024:
+            print("jdhguguer")
+            return render(request, 'upload.html', {
+                "message": "Video Size should be upto 1MB.",
+                "tag": "danger",
+            })
         # Create a temporary file to store the uploaded video
         with open(f"{video_file}", 'wb') as temp_file:
             for chunk in video_file.chunks():
@@ -1011,6 +1016,9 @@ class VideoUploadView(APIView):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             video_file = serializer.validated_data['video_file']
+            if video_file.size > 1024 * 1024:
+                message = "Video size should be upto 1MB."
+                return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
             analysez_data = analyse_video(video_file)
             try:
                 data = VideoRecognition.objects.get(id = analysez_data)
@@ -1994,6 +2002,10 @@ class LiveVideoAnalysisView(APIView):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             video_file = serializer.validated_data['video_file']
+            if video_file.size > 1024 * 1024:
+                message = "Video size should be upto 1MB."
+                return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
+
             analysez_data = analyse_live_video(video_file)
             try:
                 data = VideoRecognition.objects.get(id = analysez_data)
