@@ -19,14 +19,28 @@
                         Analyze PDF
                     </div>
                     <div class="card-body">
-                        <form method="post" action="{% url 'analyze_pdf' %}" enctype="multipart/form-data">
+                        <form method="post" action="{% url 'analyze_pdf' %}" enctype="multipart/form-data" onsubmit="showSpinner()">
                             {% csrf_token %}
                             <label class="input fw-bold" for="inputGroupFile01">Upload PDF File*</label>
                             <div class="input-group my-1">
                                 <input type="file" class="form-control" id="inputGroupFile04" name="pdf" aria-describedby="inputGroupFileAddon04" aria-label="Upload" required>
-                                <button class="btn btn-outline-secondary" type="submit" id="inputGroupFileAddon04">Submit</button>
+                                {% comment %} <button class="btn btn-outline-secondary" type="submit" id="inputGroupFileAddon04">Submit</button> {% endcomment %}
+                            </div>
+                            <div class="card-body text-center">
+                                <button class="btn btn-primary" type="submit" id="inputGroupFileAddon04">Click Here For Analyze PDF</button>
                             </div>
                         </form>
+                    </div>
+                    <!-- Spinner -->
+                    <div id="spinner" class="spinner mt-2 text-center" style="display:none;">
+                        <button class="btn btn-primary" type="button" disabled>
+                        <span class="spinner-grow spinner-grow-sm" aria-hidden="true"></span>
+                        <span class="visually-hidden" role="status">Loading...</span>
+                        </button>
+                        <button class="btn btn-primary" type="button" disabled>
+                        <span class="spinner-grow spinner-grow-sm" aria-hidden="true"></span>
+                        <span role="status">Wait For Result...</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -54,5 +68,10 @@
 
         
     </div>
+    <script>
+        function showSpinner() {
+            document.getElementById("spinner").style.display = "block";
+        }
+    </script>
 </body>
 </html>
