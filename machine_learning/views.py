@@ -45,7 +45,6 @@ import pyaudio
 import threading
 import wave
 
-
 # def load_your_model_function():
 #     # Replace 'path/to/your/model.h5' with the actual path to your saved model file
 #     model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'facial_expression', 'model.keras')
@@ -134,16 +133,32 @@ def scan_face(request):
 
     if request.method == 'POST':
         video_file = request.FILES['video']
-        # if video_file.size > 1024 * 1024:
-        #     print("jdhguguer")
-        #     return render(request, 'upload.html', {
-        #         "message": "Video Size should be upto 1MB.",
-        #         "tag": "danger",
-        #     })
+        if video_file.size > 10 * 1024 * 1024:
+            return render(request, 'upload.html', {
+                "message": "Video size should be up to 10MB.",
+                "tag": "danger",
+            })
         # Create a temporary file to store the uploaded video
-        with open(f"{video_file}", 'wb') as temp_file:
+        temp_video_path = f"{video_file.name}"
+        with open(temp_video_path, 'wb') as temp_file:
             for chunk in video_file.chunks():
                 temp_file.write(chunk)
+
+        # Use moviepy to get the video duration
+        clip = VideoFileClip(temp_video_path)
+        duration = clip.duration
+
+        # Check if video duration is greater than 30 seconds
+        if duration > 30:
+            os.remove(f"{video_file}")
+            return render(request, 'upload.html', {
+                "message": "Video duration should be less than 30 seconds.",
+                "tag": "danger",
+            })
+        # Create a temporary file to store the uploaded video
+        # with open(f"{video_file}", 'wb') as temp_file:
+        #     for chunk in video_file.chunks():
+        #         temp_file.write(chunk)
 
         try:
             video_data = VideoRecognition.objects.get(name=f"{video_file}")
@@ -1016,8 +1031,23 @@ class VideoUploadView(APIView):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             video_file = serializer.validated_data['video_file']
-            if video_file.size > 1024 * 1024:
-                message = "Video size should be upto 1MB."
+            if video_file.size > 10 * 1024 * 1024:
+                message = "Video size should be less than 10MB."
+                return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
+            # Create a temporary file to store the uploaded video
+            temp_video_path = f"{video_file.name}"
+            with open(temp_video_path, 'wb') as temp_file:
+                for chunk in video_file.chunks():
+                    temp_file.write(chunk)
+
+            # Use moviepy to get the video duration
+            clip = VideoFileClip(temp_video_path)
+            duration = clip.duration
+
+            # Check if video duration is greater than 30 seconds
+            if duration > 30:
+                os.remove(f"{video_file}")
+                message = "Video duration should be less than 30 seconds."
                 return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
             analysez_data = analyse_video(video_file)
             try:
@@ -2002,8 +2032,23 @@ class LiveVideoAnalysisView(APIView):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             video_file = serializer.validated_data['video_file']
-            if video_file.size > 1024 * 1024:
-                message = "Video size should be upto 1MB."
+            if video_file.size > 10 * 1024 * 1024:
+                message = "Video size should be upto 10MB."
+                return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
+            # Create a temporary file to store the uploaded video
+            temp_video_path = f"{video_file.name}"
+            with open(temp_video_path, 'wb') as temp_file:
+                for chunk in video_file.chunks():
+                    temp_file.write(chunk)
+
+            # Use moviepy to get the video duration
+            clip = VideoFileClip(temp_video_path)
+            duration = clip.duration
+
+            # Check if video duration is greater than 30 seconds
+            if duration > 30:
+                os.remove(f"{video_file}")
+                message = "Video duration should be less than 30 seconds."
                 return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
 
             analysez_data = analyse_live_video(video_file)
