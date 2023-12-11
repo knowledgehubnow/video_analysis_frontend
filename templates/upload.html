@@ -23,7 +23,7 @@
                         Analyze Live Video
                     </div>
                     <div class="card-body text-center">
-                        <a href="#"><button type="button" class="btn btn-secondary" onclick="showSpinner()">Click Here For Analyzed Videos</button></a>
+                        <a href="#"><button type="button" class="btn btn-secondary" onclick="showSpinner()">Click Here For Analyzed Live Video</button></a>
                     </div>
                 </div>
                 <h1 class="text-center">OR</h1>
@@ -34,10 +34,13 @@
                     <div class="card-body">
                         <form method="post" enctype="multipart/form-data" action="{% url 'scan_face' %}" onsubmit="showSpinner()">
                             {% csrf_token %}
-                            <label class="input fw-bold" for="inputGroupFile01">Upload Video*</label>
+                            <label class="input fw-bold" for="inputGroupFile01">Upload Video*<span class="text-danger">(size should be less than 1MB.)</span></label>
                             <div class="input-group my-1">
                                 <input type="file" class="form-control" id="inputGroupFile04" name="video" accept="video/*" aria-describedby="inputGroupFileAddon04" aria-label="Upload" required>
-                                <button class="btn btn-outline-secondary" type="submit" id="inputGroupFileAddon04">Submit</button>
+                                {% comment %} <button class="btn btn-outline-secondary" type="submit" id="inputGroupFileAddon04">Submit</button> {% endcomment %}
+                            </div>
+                            <div class="card-body text-center">
+                                <button class="btn btn-primary" type="submit" id="inputGroupFileAddon04">Click Here For Analyzed Video</button>
                             </div>
                         </form>
                     </div>
