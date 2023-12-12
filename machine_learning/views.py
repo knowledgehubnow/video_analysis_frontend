@@ -103,29 +103,6 @@ def calculate_EAR(eye):
     # calculate the EAR 
     EAR = (y1+y2) / x1 
     return EAR 
-    
-# Calculate distance
-def findDistance(x1, y1, x2, y2):
-    dist = m.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-    return dist
-
-
-# Calculate angle.
-def findAngle(x1, y1, x2, y2):
-    theta = m.acos((y2 - y1) * (-y1) / (m.sqrt(
-        (x2 - x1) ** 2 + (y2 - y1) ** 2) * y1))
-    degree = int(180 / m.pi) * theta
-    return degree
-
-
-"""
-Function to send alert. Use this function to send alert when bad posture detected.
-Feel free to get creative and customize as per your convenience.
-"""
-
-
-def sendWarning(x):
-    pass
 
 
 def scan_face(request):
