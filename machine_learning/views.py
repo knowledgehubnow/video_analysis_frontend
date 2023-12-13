@@ -45,17 +45,6 @@ import pyaudio
 import threading
 import wave
 
-# def load_your_model_function():
-#     # Replace 'path/to/your/model.h5' with the actual path to your saved model file
-#     model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'facial_expression', 'model.keras')
-    
-#     # Load the model
-#     loaded_model = keras.models.load_model(model_path)
-    
-#     return loaded_model
-
-# emotion_labels = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
-
 
 mp_pose = mp.solutions.pose
 pose = mp_pose.Pose()
@@ -132,10 +121,6 @@ def scan_face(request):
                 "message": "Video duration should be less than 30 seconds.",
                 "tag": "danger",
             })
-        # Create a temporary file to store the uploaded video
-        # with open(f"{video_file}", 'wb') as temp_file:
-        #     for chunk in video_file.chunks():
-        #         temp_file.write(chunk)
 
         try:
             video_data = VideoRecognition.objects.get(name=f"{video_file}")
@@ -793,24 +778,6 @@ def analyze_voice_modulation(audio_file_path):
         "modulation_rating": modulation_rating,
         # Add more voice modulation characteristics as needed
     }
-
-
-# def voice_quality(audio_file_path):
-#     # Load your audio file
-#     audio = AudioSegment.from_file(audio_file_path, format="wav")
-
-#     # Get the loudness in dB
-#     loudness = audio.dBFS
-
-#     # print(f"Loudness: {loudness} dB")
-#     # Check if loudness is -inf
-#     if loudness == float("-inf"):
-#         quality = "Voice quality cannot be determined. The audio may be silent."
-#     elif loudness <= -30:
-#         quality = "Voice quality is poor."
-#     else:
-#         quality = "Voice quality is good."
-#     return quality
     
 
 def calculate_energy_level(audio):
@@ -1290,7 +1257,6 @@ def analyse_video(video_file):
     try:
         os.remove(f"{video_file}")
         os.remove(f"output_{video_file}")
-        # os.remove(audio_file_path)
         os.remove(f"speeches/{audio_file_path}")
     except:
         pass
@@ -1973,9 +1939,7 @@ def analyse_live():
         print(e)
         data_id = None
     try:
-        # os.remove(video_output_file)
         os.remove(output_filename)
-        # os.remove(audio_file_path)
         os.remove(OUTPUT_FILE_PATH)
     except:
         pass
@@ -2293,13 +2257,8 @@ def analyse_live_video(video_file):
     try:
         os.remove(f"{video_file}")
         os.remove(output_filename)
-        # os.remove(audio_file_path)
         os.remove(audio_file_path)
     except Exception as e:
         print(e)
         pass
     return data_id
-
-    
-
-    
