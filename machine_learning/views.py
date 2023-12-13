@@ -1992,7 +1992,7 @@ class LiveVideoAnalysisView(APIView):
         if serializer.is_valid():
             video_file = serializer.validated_data['video_file']
             if video_file.size > 10 * 1024 * 1024:
-                message = "Video size should be upto 10MB."
+                message = "Video size should be less than 10MB."
                 return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
             # Create a temporary file to store the uploaded video
             temp_video_path = f"{video_file.name}"
@@ -2009,18 +2009,41 @@ class LiveVideoAnalysisView(APIView):
                 os.remove(f"{video_file}")
                 message = "Video duration should be less than 30 seconds."
                 return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
-
-            analysez_data = analyse_live_video(video_file)
+            
             try:
-                data = VideoRecognition.objects.get(id = analysez_data)
-                serializer = VideoDataSerializer(data)  # Use your VideoDataSerializer to serialize the instance
-                serialized_data = serializer.data
-            except:
-                serialized_data = None
-            return Response(
-                serialized_data,
-                status=status.HTTP_201_CREATED
-            )
+                video_data = VideoRecognition.objects.get(name=f"{video_file}")
+            except VideoRecognition.DoesNotExist:
+                video_data = None
+
+            if video_data is None:
+                analysis = analyse_live_video(video_file)
+                if analysis is not None:
+                    analysed_data = VideoRecognition.objects.get(id = analysis)
+                    serializer = VideoDataSerializer(analysed_data)  # Use your VideoDataSerializer to serialize the instance
+                    serialized_data = serializer.data
+                    return Response(
+                        serialized_data,
+                        status=status.HTTP_200_OK
+                    )
+                else:
+                    analysed_data = {
+                        "message":"Error during video analysis. Please try again or provide a different video."
+                    }
+                    return Response(
+                        analysed_data,
+                        status=status.HTTP_400_BAD_REQUEST,
+                        content_type="application/json" 
+                    )
+            else:
+                analysed_data = {
+                    "message":"Video already with this name."
+                }
+                os.remove(temp_video_path)
+                return Response(
+                    analysed_data,
+                    status=status.HTTP_409_CONFLICT,
+                    content_type="application/json"  # Set content type to application/json
+                )
         
         return Response(
             serializer.errors,
@@ -2028,12 +2051,10 @@ class LiveVideoAnalysisView(APIView):
         )
     
 def analyse_live_video(video_file):
-    with open(f"{video_file}", 'wb') as temp_file:
-        for chunk in video_file.chunks():
-            temp_file.write(chunk)
     # Load the pre-trained face detection classifier
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
     eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
+    smile_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_smile.xml')   
 
     # Open the webcam (assuming the default camera index, 0)
     cap = cv2.VideoCapture(f"{video_file}")
@@ -2071,12 +2092,6 @@ def analyse_live_video(video_file):
     good_posture_time = 0
     bad_posture_time = 0
 
-    global stop_recording
-    global audio_frames  # Use the global variable to store audio frames
-
-    # Start recording audio in a separate thread
-    audio_thread = threading.Thread(target=lambda: audio_frames.extend(record_audio()))
-    audio_thread.start()
 
     while True:
         # Capture frames.
@@ -2195,7 +2210,7 @@ def analyse_live_video(video_file):
             current_second_start_time = time.time()
 
         # Smile detection
-        smile_detect, x, y, w, h = smile_detection(image, face_cascade, eye_cascade)
+        smile_detect, x, y, w, h = smile_detection(image, face_cascade, smile_cascade)
         if smile_detect > 0:
             cv2.putText(image, 'Smiling', (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
 
