@@ -1033,31 +1033,31 @@ class VideoUploadView(APIView):
                 video_data = None
 
             if video_data is None:
-                analysez_data = analyse_video(video_file)
-                print(analysez_data)
-                if analysez_data is not None:
-                    serializer = VideoDataSerializer(analysez_data)  # Use your VideoDataSerializer to serialize the instance
+                analysis = analyse_video(video_file)
+                if analysis is not None:
+                    analysed_data = VideoRecognition.objects.get(id = analysis)
+                    serializer = VideoDataSerializer(analysed_data)  # Use your VideoDataSerializer to serialize the instance
                     serialized_data = serializer.data
                     return Response(
                         serialized_data,
                         status=status.HTTP_200_OK
                     )
                 else:
-                    analysez_data = {
+                    analysed_data = {
                         "message":"Error during video analysis. Please try again or provide a different video."
                     }
                     return Response(
-                        analysez_data,
+                        analysed_data,
                         status=status.HTTP_400_BAD_REQUEST,
                         content_type="application/json" 
                     )
             else:
-                analysez_data = {
+                analysed_data = {
                     "message":"Video already with this name."
                 }
                 os.remove(temp_video_path)
                 return Response(
-                    analysez_data,
+                    analysed_data,
                     status=status.HTTP_409_CONFLICT,
                     content_type="application/json"  # Set content type to application/json
                 )
