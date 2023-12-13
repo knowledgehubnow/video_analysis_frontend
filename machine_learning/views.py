@@ -1026,17 +1026,41 @@ class VideoUploadView(APIView):
                 os.remove(f"{video_file}")
                 message = "Video duration should be less than 30 seconds."
                 return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
-            analysez_data = analyse_video(video_file)
+            
             try:
-                data = VideoRecognition.objects.get(id = analysez_data)
-                serializer = VideoDataSerializer(data)  # Use your VideoDataSerializer to serialize the instance
-                serialized_data = serializer.data
-            except:
-                serialized_data = None
-            return Response(
-                serialized_data,
-                status=status.HTTP_201_CREATED
-            )
+                video_data = VideoRecognition.objects.get(name=f"{video_file}")
+            except VideoRecognition.DoesNotExist:
+                video_data = None
+
+            if video_data is None:
+                analysez_data = analyse_video(video_file)
+                print(analysez_data)
+                if analysez_data is not None:
+                    serializer = VideoDataSerializer(analysez_data)  # Use your VideoDataSerializer to serialize the instance
+                    serialized_data = serializer.data
+                    return Response(
+                        serialized_data,
+                        status=status.HTTP_200_OK
+                    )
+                else:
+                    analysez_data = {
+                        "message":"Error during video analysis. Please try again or provide a different video."
+                    }
+                    return Response(
+                        analysez_data,
+                        status=status.HTTP_400_BAD_REQUEST,
+                        content_type="application/json" 
+                    )
+            else:
+                analysez_data = {
+                    "message":"Video already with this name."
+                }
+                os.remove(temp_video_path)
+                return Response(
+                    analysez_data,
+                    status=status.HTTP_409_CONFLICT,
+                    content_type="application/json"  # Set content type to application/json
+                )
         
         return Response(
             serializer.errors,
@@ -1044,275 +1068,233 @@ class VideoUploadView(APIView):
         )
     
 def analyse_video(video_file):
-    # Create a temporary file to store the uploaded video
-
-        try:
-            video_data = VideoRecognition.objects.get(name=f"{video_file}")
-        except VideoRecognition.DoesNotExist:
-            video_data = None
-
-        if video_data is None:
-            face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-            eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
-            smile_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_smile.xml')
-    
-            try:
-                audio_file_path = generate_audio_file(f"{video_file}")
-                print(audio_file_path)
-                language_analysis, voice_modulation,energy_category,filler_words,words_list,greeting_words = analyze_language_and_voice(audio_file_path)
-                # Get speech rate
-                speech_rate = calculate_speech_rate(audio_file_path)
-                monotone = voice_monotone(audio_file_path)
-                pauses = detect_voice_pauses(audio_file_path)
-                print(f"Speech rate: {speech_rate:.2f} words/min")
-                print("Language Analysis:", language_analysis)
-                print("energy_level Analysis:", energy_category)
-                print("filler_words Analysis:", filler_words)
-                print("frequently_used_words Analysis:", words_list)
-                print("Voice Modulation Analysis:", voice_modulation)
-                print("Greeting Word Analysis:", greeting_words)
-                print("Voice Tone Analysis:", monotone)
-                print("Voice Pauses Analysis:", pauses)
-
-                if len(greeting_words) > 0:
-                    greeting = "Greeting included"
-                else:
-                    greeting = None
-
-                frequently_used_words = json.dumps(words_list)
-                filler_words_string = json.dumps(filler_words)
-                emo = voice_emotion(audio_file_path)
-                # Convert NumPy array to Python list
-                emo_list = emo.tolist() if isinstance(emo, np.ndarray) else emo
-
-                # Convert to JSON
-                voice_emo = json.dumps(emo_list)
-
-            except FileNotFoundError as e:
-                print(f"File not found: {e}")
-            except Exception as e:
-                print(f"An error occurred: {e}")
-
-            cap = cv2.VideoCapture(f"{video_file}")
-            fps = int(cap.get(cv2.CAP_PROP_FPS))
-            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            frame_size = (width, height)
-            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-
-            # Open a video capture object
-            output_filename = f"output_{video_file}"
-            video_output = cv2.VideoWriter(output_filename, fourcc, fps, frame_size)
-
-            # Variables 
-            blink_thresh = 0.45
-            succ_frame = 2
-            count_frame = 0
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
+    smile_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_smile.xml')   
+    try:
+        audio_file_path = generate_audio_file(f"{video_file}")
+        print(audio_file_path)
+        language_analysis, voice_modulation,energy_category,filler_words,words_list,greeting_words = analyze_language_and_voice(audio_file_path)
+        # Get speech rate
+        speech_rate = calculate_speech_rate(audio_file_path)
+        monotone = voice_monotone(audio_file_path)
+        pauses = detect_voice_pauses(audio_file_path)
+        print(f"Speech rate: {speech_rate:.2f} words/min")
+        print("Language Analysis:", language_analysis)
+        print("energy_level Analysis:", energy_category)
+        print("filler_words Analysis:", filler_words)
+        print("frequently_used_words Analysis:", words_list)
+        print("Voice Modulation Analysis:", voice_modulation)
+        print("Greeting Word Analysis:", greeting_words)
+        print("Voice Tone Analysis:", monotone)
+        print("Voice Pauses Analysis:", pauses)
+        if len(greeting_words) > 0:
+            greeting = "Greeting included"
+        else:
+            greeting = None
+        frequently_used_words = json.dumps(words_list)
+        filler_words_string = json.dumps(filler_words)
+        emo = voice_emotion(audio_file_path)
+        # Convert NumPy array to Python list
+        emo_list = emo.tolist() if isinstance(emo, np.ndarray) else emo
+        # Convert to JSON
+        voice_emo = json.dumps(emo_list)
+    except FileNotFoundError as e:
+        print(f"File not found: {e}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    cap = cv2.VideoCapture(f"{video_file}")
+    fps = int(cap.get(cv2.CAP_PROP_FPS))
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    frame_size = (width, height)
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    # Open a video capture object
+    output_filename = f"output_{video_file}"
+    video_output = cv2.VideoWriter(output_filename, fourcc, fps, frame_size)
+    # Variables 
+    blink_thresh = 0.45
+    succ_frame = 2
+    count_frame = 0
+    blinks_per_minute = 0
+    current_second_start_time = time.time()
+    # Example: Process every 11rd frame
+    frame_skip = 11
+    frame_count = 0  # Initialize the frame count
+    eye_contact = None
+    hand_move = None
+    eye_bling = None
+    b_confidence = None
+    thanks = None
+    greet_gesture = None
+    # Initialize variables for tracking time
+    start_time = time.time()
+    total_detected_time = 0
+    total_not_detected_time = 0
+    # Initialize variables for Body Posture
+    good_posture_time = 0
+    bad_posture_time = 0            
+    while True:
+        # Capture frames.
+        success, image = cap.read()
+        if not success:
+            print("Null Frames")
+            break
+        frame_count += 1
+        if frame_count % frame_skip != 0:
+            continue  # Skip frames
+        try:                   
+            posture = detect_body_posture(image, fps)
+            good_time, bad_time = posture
+            print("Good Posture Time:", good_time)
+            print("Bad Posture Time:", bad_time)
+            if good_time > 0:
+                good_posture_time += good_time
+                # time_string_good = 'Good Posture Time : ' + str(round(good_time, 1)) + 's'
+                # cv2.putText(image, time_string_good, (10, h - 20), font, 0.9, green, 2)
+            else:
+                bad_posture_time += bad_time
+                # time_string_bad = 'Bad Posture Time : ' + str(round(bad_time, 1)) + 's'
+                # cv2.putText(image, time_string_bad, (10, h - 20), font, 0.9, red, 2)
+        except Exception as e:
+            print(e)
+        gray_frame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        # Detect faces in the frame
+        faces = detector(gray_frame)
+        if len(faces) > 0:
+            total_detected_time += time.time() - start_time
+            start_time = time.time()
+            for face in faces:
+                # Get facial landmarks
+                landmarks = landmark_predict(gray_frame, face)
+                # Draw circles around each landmark point
+                for n in range(0, 68):
+                    x = landmarks.part(n).x
+                    y = landmarks.part(n).y
+                    cv2.circle(image, (x, y), 1, (0, 255, 0), -1)
+                # Draw rectangle around the face
+                x, y, w, h = face.left(), face.top(), face.width(), face.height()
+                cv2.rectangle(image, (x, y), (x+w, y+h), (255, 0, 0), 2)
+        else:
+            total_not_detected_time += time.time() - start_time
+            start_time = time.time()                
+        frame = cv2.flip(image, 1)
+        # Emotion Changes Detection
+        predicted_emotion = get_emotion_change(face_cascade,image)
+        if predicted_emotion is not None:
+            print("Emotion Changes:", predicted_emotion)
+            cv2.putText(image, predicted_emotion, (50, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+        else:
+            pass
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)               
+        # Process the image with MediaPipe Hands
+        # Hand Movement, Thanks Geesture and body confidence detection code functions *****************
+        greeting_gesture = hand_greeting_gesture(frame)
+        hand_track = hand_movement(image)
+        thanks_gesture = get_thanks_gesture(image)
+        confidence = body_confidence(image)
+        # Convert the RGB image to BGR.
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        if greeting_gesture == "Namaste" or greeting_gesture == "Hi/Hello":
+            greet_gesture = "Greeting gesture included"
+            cv2.putText(image, greeting_gesture, (20, 100), cv2.FONT_HERSHEY_COMPLEX, 0.9, (0, 255, 0), 2)
+        else:
+            pass
+        if hand_track is not None:
+            hand_move = 'Hand Moving'
+            hand_track,x,y = hand_track
+            cv2.putText(image, 'Hand Moving', (x, y + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+        else:
+            pass
+        if thanks_gesture is not None:
+            thanks_gesture,x,y = thanks_gesture
+            thanks = "Thanking gesture included"
+            cv2.putText(image, 'Thanks Gesture', (x, y + 30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 0), 2)
+        else:
+            pass
+        if confidence:
+            b_confidence = "Confident body posture"
+            # Display the posture on the frame
+            cv2.putText(image, f"Posture: {confidence}", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 153, 51 ), 2)
+        else:
+            pass
+        # Eye Contact detection code start ***********
+        eye_distance, x, y, w, h = eye_contact_detection(image, face_cascade, eye_cascade)
+        eye_contact_threshold = 20  # Example threshold, you may need 
+        # Check if eyes are horizontally aligned (within the threshold)
+        if eye_distance < eye_contact_threshold:
+            eye_contact = 'Eye Contact'
+            cv2.putText(image, 'Eye Contact', (x, y + h - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 233, 51), 2)                
+        # Eye Blinging detection code start *************
+        blinging_detected = eye_blinging(image)
+        if blinging_detected < blink_thresh: 
+            count_frame += 1  # incrementing the frame count 
+        else: 
+            if count_frame >= succ_frame: 
+                blinks_per_minute += 1
+                cv2.putText(image, 'Blink Detected', (60, 50), 
+                            cv2.FONT_HERSHEY_DUPLEX, 1, (0, 200, 0), 1) 
+            else: 
+                count_frame = 0
+        elapsed_time = time.time() - current_second_start_time
+        if elapsed_time >= 60:
+            if blinks_per_minute > 12:
+                eye_bling = "Blink more often"
+                cv2.putText(image, f'{blinks_per_minute} Blinks in 1 Second', (60, 100), cv2.FONT_HERSHEY_DUPLEX, 1, (0, 0, 255), 1)
             blinks_per_minute = 0
             current_second_start_time = time.time()
-            # Example: Process every 11rd frame
-            frame_skip = 11
-            frame_count = 0  # Initialize the frame count
-            eye_contact = None
-            hand_move = None
-            eye_bling = None
-            b_confidence = None
-            thanks = None
-            greet_gesture = None
-            # Initialize variables for tracking time
-            start_time = time.time()
-            total_detected_time = 0
-            total_not_detected_time = 0
-
-            # Initialize variables for Body Posture
-            good_posture_time = 0
-            bad_posture_time = 0
-            
-            while True:
-                # Capture frames.
-                success, image = cap.read()
-                if not success:
-                    print("Null Frames")
-                    break
-                frame_count += 1
-                if frame_count % frame_skip != 0:
-                    continue  # Skip frames
-                try:                   
-                    posture = detect_body_posture(image, fps)
-                    good_time, bad_time = posture
-                    print("Good Posture Time:", good_time)
-                    print("Bad Posture Time:", bad_time)
-                    if good_time > 0:
-                        good_posture_time += good_time
-                        # time_string_good = 'Good Posture Time : ' + str(round(good_time, 1)) + 's'
-                        # cv2.putText(image, time_string_good, (10, h - 20), font, 0.9, green, 2)
-                    else:
-                        bad_posture_time += bad_time
-                        # time_string_bad = 'Bad Posture Time : ' + str(round(bad_time, 1)) + 's'
-                        # cv2.putText(image, time_string_bad, (10, h - 20), font, 0.9, red, 2)
-
-                except Exception as e:
-                    print(e)
-                gray_frame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-                # Detect faces in the frame
-                faces = detector(gray_frame)
-
-                if len(faces) > 0:
-                    total_detected_time += time.time() - start_time
-                    start_time = time.time()
-                    for face in faces:
-                        # Get facial landmarks
-                        landmarks = landmark_predict(gray_frame, face)
-
-                        # Draw circles around each landmark point
-                        for n in range(0, 68):
-                            x = landmarks.part(n).x
-                            y = landmarks.part(n).y
-                            cv2.circle(image, (x, y), 1, (0, 255, 0), -1)
-
-                        # Draw rectangle around the face
-                        x, y, w, h = face.left(), face.top(), face.width(), face.height()
-                        cv2.rectangle(image, (x, y), (x+w, y+h), (255, 0, 0), 2)
-                else:
-                    total_not_detected_time += time.time() - start_time
-                    start_time = time.time()
-                
-                frame = cv2.flip(image, 1)
-                # Emotion Changes Detection
-                predicted_emotion = get_emotion_change(face_cascade,image)
-                if predicted_emotion is not None:
-                    print("Emotion Changes:", predicted_emotion)
-                    cv2.putText(image, predicted_emotion, (50, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
-                else:
-                    pass
-                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-                
-                # Process the image with MediaPipe Hands
-                # Hand Movement, Thanks Geesture and body confidence detection code functions *****************
-                greeting_gesture = hand_greeting_gesture(frame)
-                hand_track = hand_movement(image)
-                thanks_gesture = get_thanks_gesture(image)
-                confidence = body_confidence(image)
-                # Convert the RGB image to BGR.
-                image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-
-                if greeting_gesture == "Namaste" or greeting_gesture == "Hi/Hello":
-                    greet_gesture = "Greeting gesture included"
-                    cv2.putText(image, greeting_gesture, (20, 100), cv2.FONT_HERSHEY_COMPLEX, 0.9, (0, 255, 0), 2)
-                else:
-                    pass
-
-                if hand_track is not None:
-                    hand_move = 'Hand Moving'
-                    hand_track,x,y = hand_track
-                    cv2.putText(image, 'Hand Moving', (x, y + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-                else:
-                    pass
-
-                if thanks_gesture is not None:
-                    thanks_gesture,x,y = thanks_gesture
-                    thanks = "Thanking gesture included"
-                    cv2.putText(image, 'Thanks Gesture', (x, y + 30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 0), 2)
-                else:
-                    pass
-
-                if confidence:
-                    b_confidence = "Confident body posture"
-                    # Display the posture on the frame
-                    cv2.putText(image, f"Posture: {confidence}", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 153, 51 ), 2)
-                else:
-                    pass
-
-                # Eye Contact detection code start ***********
-                eye_distance, x, y, w, h = eye_contact_detection(image, face_cascade, eye_cascade)
-                eye_contact_threshold = 20  # Example threshold, you may need 
-                # Check if eyes are horizontally aligned (within the threshold)
-                if eye_distance < eye_contact_threshold:
-                    eye_contact = 'Eye Contact'
-                    cv2.putText(image, 'Eye Contact', (x, y + h - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 233, 51), 2)
-                
-                # Eye Blinging detection code start *************
-                blinging_detected = eye_blinging(image)
-                if blinging_detected < blink_thresh: 
-                    count_frame += 1  # incrementing the frame count 
-                else: 
-                    if count_frame >= succ_frame: 
-                        blinks_per_minute += 1
-                        cv2.putText(image, 'Blink Detected', (60, 50), 
-                                    cv2.FONT_HERSHEY_DUPLEX, 1, (0, 200, 0), 1) 
-                    else: 
-                        count_frame = 0
-
-                elapsed_time = time.time() - current_second_start_time
-                if elapsed_time >= 60:
-                    if blinks_per_minute > 12:
-                        eye_bling = "Blink more often"
-                        cv2.putText(image, f'{blinks_per_minute} Blinks in 1 Second', (60, 100), cv2.FONT_HERSHEY_DUPLEX, 1, (0, 0, 255), 1)
-                    blinks_per_minute = 0
-                    current_second_start_time = time.time()
-
-                # Eye Blinging detection code start *************
-                smile_detect, x, y, w, h = smile_detection(image, face_cascade, smile_cascade)
-                if smile_detect > 0:
-                    cv2.putText(image, 'Smiling', (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-
-                
-                # Write the frame to the output video.
-                video_output.write(image)
-                # new_width = 500
-                # new_height = 600
-
-                # # Resize the image
-                # resized_image = cv2.resize(image, (new_width, new_height))
-
-                # # Display the frame.
-                # cv2.imshow('Video', resized_image)
-
-                # # Break the loop if 'q' key is pressed.
-                # if cv2.waitKey(1) & 0xFF == ord('q'):
-                #     break
-                
-            # Release video capture and writer objects.
-            cap.release()
-            video_output.release()
-            cv2.destroyAllWindows()
-            body_posture = None
-            if good_posture_time > 0:
-                print(good_posture_time)
-                print(bad_posture_time)
-                posture_ratio = good_posture_time/(good_posture_time + bad_posture_time)
-                if posture_ratio > 0.5:
-                    body_posture = "Good Body Posture"
-                else:
-                    body_posture = "Bad Body Posture"
-            else:
-                pass
-            total_len = total_detected_time + total_not_detected_time
-            ratio = total_detected_time/total_len
-            if ratio > 0.5:
-                face_detected = "Appropriate Facial Detected."
-            else:
-                face_detected = "Appropriate Facial Not Detected."
-            
-            try:
-                data = VideoRecognition(name=video_file,language_analysis= language_analysis,voice_modulation_analysis = voice_modulation,energy_level_analysis= energy_category,video_file=video_file, word_per_minute=speech_rate,filler_words_used=filler_words_string,frequently_used_word=frequently_used_words,voice_emotion = voice_emo,
-                                        confidence = b_confidence,eye_bling = eye_bling,hand_movement= hand_move,eye_contact=eye_contact,thanks_gesture=thanks,greeting=greeting,greeting_gesture=greet_gesture,voice_tone = monotone,voice_pauses=pauses,appropriate_facial = face_detected,body_posture=body_posture)
-                data.save()
-                data_id = data.id
-            except Exception as e:
-                data_id = None
-                pass
-            try:
-                os.remove(f"{video_file}")
-                os.remove(f"output_{video_file}")
-                # os.remove(audio_file_path)
-                os.remove(f"speeches/{audio_file_path}")
-            except:
-                pass
-            return data_id
+        # Eye Blinging detection code start *************
+        smile_detect, x, y, w, h = smile_detection(image, face_cascade, smile_cascade)
+        if smile_detect > 0:
+            cv2.putText(image, 'Smiling', (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)               
+        # Write the frame to the output video.
+        video_output.write(image)
+        # new_width = 500
+        # new_height = 600
+        # # Resize the image
+        # resized_image = cv2.resize(image, (new_width, new_height))
+        # # Display the frame.
+        # cv2.imshow('Video', resized_image)
+        # # Break the loop if 'q' key is pressed.
+        # if cv2.waitKey(1) & 0xFF == ord('q'):
+        #     break                
+    # Release video capture and writer objects.
+    cap.release()
+    video_output.release()
+    cv2.destroyAllWindows()
+    body_posture = None
+    if good_posture_time > 0:
+        print(good_posture_time)
+        print(bad_posture_time)
+        posture_ratio = good_posture_time/(good_posture_time + bad_posture_time)
+        if posture_ratio > 0.5:
+            body_posture = "Good Body Posture"
         else:
-            os.remove(f"{video_file}")
-            return None
+            body_posture = "Bad Body Posture"
+    else:
+        pass
+    total_len = total_detected_time + total_not_detected_time
+    ratio = total_detected_time/total_len
+    if ratio > 0.5:
+        face_detected = "Appropriate Facial Detected."
+    else:
+        face_detected = "Appropriate Facial Not Detected."            
+    try:
+        video_data = VideoRecognition(name=video_file,language_analysis= language_analysis,voice_modulation_analysis = voice_modulation,energy_level_analysis= energy_category,video_file=video_file, word_per_minute=speech_rate,filler_words_used=filler_words_string,frequently_used_word=frequently_used_words,voice_emotion = voice_emo,
+                                confidence = b_confidence,eye_bling = eye_bling,hand_movement= hand_move,eye_contact=eye_contact,thanks_gesture=thanks,greeting=greeting,greeting_gesture=greet_gesture,voice_tone = monotone,voice_pauses=pauses,appropriate_facial = face_detected,body_posture=body_posture)
+        video_data.save()
+        data = video_data.id
+    except Exception as e:
+        data = None
+        pass
+    try:
+        os.remove(f"{video_file}")
+        os.remove(f"output_{video_file}")
+        # os.remove(audio_file_path)
+        os.remove(f"speeches/{audio_file_path}")
+    except:
+        pass
+    return data
         
 
 def scan_live_face(request):
