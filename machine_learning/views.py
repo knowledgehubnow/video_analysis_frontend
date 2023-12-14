@@ -36,7 +36,7 @@ import math as m
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import VideoSerializer,VideoDataSerializer
+from .serializers import *
 from rest_framework.parsers import FormParser, MultiPartParser
 import uuid
 from .body_posture_detection import body_posture as detect_body_posture
@@ -974,58 +974,75 @@ class VideoUploadView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            video_file = serializer.validated_data['video_file']
-            if video_file.size > 10 * 1024 * 1024:
-                message = "Video size should be less than 10MB."
-                return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
-            # Create a temporary file to store the uploaded video
-            temp_video_path = f"{video_file.name}"
-            with open(temp_video_path, 'wb') as temp_file:
-                for chunk in video_file.chunks():
-                    temp_file.write(chunk)
-
-            # Use moviepy to get the video duration
-            clip = VideoFileClip(temp_video_path)
-            duration = clip.duration
-
-            # Check if video duration is greater than 30 seconds
-            if duration > 30:
-                os.remove(f"{video_file}")
-                message = "Video duration should be less than 30 seconds."
-                return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
-            
             try:
-                video_data = VideoRecognition.objects.get(name=f"{video_file}")
-            except VideoRecognition.DoesNotExist:
-                video_data = None
+                video_file = serializer.validated_data['video_file']
+            except KeyError:
+                error_response = {
+                    "message": "Image field is required. Please check image field correctly defined.",
+                }
+                return Response(error_response, status=status.HTTP_400_BAD_REQUEST) 
+            
+            if video_file:
+                if video_file.size > 10 * 1024 * 1024:
+                    message = "Video size should be less than 10MB."
+                    return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
+                # Create a temporary file to store the uploaded video
+                temp_video_path = f"{video_file.name}"
+                with open(temp_video_path, 'wb') as temp_file:
+                    for chunk in video_file.chunks():
+                        temp_file.write(chunk)
 
-            if video_data is None:
-                analysis = analyse_video(video_file)
-                if analysis is not None:
-                    analysed_data = VideoRecognition.objects.get(id = analysis)
-                    serializer = VideoDataSerializer(analysed_data)  # Use your VideoDataSerializer to serialize the instance
-                    serialized_data = serializer.data
-                    return Response(
-                        serialized_data,
-                        status=status.HTTP_200_OK
-                    )
+                # Use moviepy to get the video duration
+                clip = VideoFileClip(temp_video_path)
+                duration = clip.duration
+
+                # Check if video duration is greater than 30 seconds
+                if duration > 30:
+                    os.remove(f"{video_file}")
+                    message = "Video duration should be less than 30 seconds."
+                    return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
+                
+                try:
+                    video_data = VideoRecognition.objects.get(name=f"{video_file}")
+                except VideoRecognition.DoesNotExist:
+                    video_data = None
+
+                if video_data is None:
+                    analysis = analyse_video(video_file)
+                    if analysis is not None:
+                        analysed_data = VideoRecognition.objects.get(id = analysis)
+                        serializer = VideoDataSerializer(analysed_data)  # Use your VideoDataSerializer to serialize the instance
+                        serialized_data = serializer.data
+                        return Response(
+                            serialized_data,
+                            status=status.HTTP_200_OK
+                        )
+                    else:
+                        analysed_data = {
+                            "message":"Error during video analysis. Please try again or provide a different video."
+                        }
+                        return Response(
+                            analysed_data,
+                            status=status.HTTP_400_BAD_REQUEST,
+                            content_type="application/json" 
+                        )
                 else:
                     analysed_data = {
-                        "message":"Error during video analysis. Please try again or provide a different video."
+                        "message":"Video already with this name."
                     }
+                    os.remove(temp_video_path)
                     return Response(
                         analysed_data,
-                        status=status.HTTP_400_BAD_REQUEST,
-                        content_type="application/json" 
+                        status=status.HTTP_409_CONFLICT,
+                        content_type="application/json"  # Set content type to application/json
                     )
             else:
                 analysed_data = {
-                    "message":"Video already with this name."
+                    "message":"Video not found,Please upload video."
                 }
-                os.remove(temp_video_path)
                 return Response(
                     analysed_data,
-                    status=status.HTTP_409_CONFLICT,
+                    status=status.HTTP_404_NOT_FOUND,
                     content_type="application/json"  # Set content type to application/json
                 )
         
@@ -1954,58 +1971,75 @@ class LiveVideoAnalysisView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            video_file = serializer.validated_data['video_file']
-            if video_file.size > 10 * 1024 * 1024:
-                message = "Video size should be less than 10MB."
-                return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
-            # Create a temporary file to store the uploaded video
-            temp_video_path = f"{video_file.name}"
-            with open(temp_video_path, 'wb') as temp_file:
-                for chunk in video_file.chunks():
-                    temp_file.write(chunk)
-
-            # Use moviepy to get the video duration
-            clip = VideoFileClip(temp_video_path)
-            duration = clip.duration
-
-            # Check if video duration is greater than 30 seconds
-            if duration > 30:
-                os.remove(f"{video_file}")
-                message = "Video duration should be less than 30 seconds."
-                return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
-            
             try:
-                video_data = VideoRecognition.objects.get(name=f"{video_file}")
-            except VideoRecognition.DoesNotExist:
-                video_data = None
+                video_file = serializer.validated_data['video_file']
+            except KeyError:
+                error_response = {
+                    "message": "Image field is required. Please check image field correctly defined.",
+                }
+                return Response(error_response, status=status.HTTP_400_BAD_REQUEST) 
+            
+            if video_file:
+                if video_file.size > 10 * 1024 * 1024:
+                    message = "Video size should be less than 10MB."
+                    return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
+                # Create a temporary file to store the uploaded video
+                temp_video_path = f"{video_file.name}"
+                with open(temp_video_path, 'wb') as temp_file:
+                    for chunk in video_file.chunks():
+                        temp_file.write(chunk)
 
-            if video_data is None:
-                analysis = analyse_live_video(video_file)
-                if analysis is not None:
-                    analysed_data = VideoRecognition.objects.get(id = analysis)
-                    serializer = VideoDataSerializer(analysed_data)  # Use your VideoDataSerializer to serialize the instance
-                    serialized_data = serializer.data
-                    return Response(
-                        serialized_data,
-                        status=status.HTTP_200_OK
-                    )
+                # Use moviepy to get the video duration
+                clip = VideoFileClip(temp_video_path)
+                duration = clip.duration
+
+                # Check if video duration is greater than 30 seconds
+                if duration > 30:
+                    os.remove(f"{video_file}")
+                    message = "Video duration should be less than 30 seconds."
+                    return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
+                
+                try:
+                    video_data = VideoRecognition.objects.get(name=f"{video_file}")
+                except VideoRecognition.DoesNotExist:
+                    video_data = None
+
+                if video_data is None:
+                    analysis = analyse_live_video(video_file)
+                    if analysis is not None:
+                        analysed_data = VideoRecognition.objects.get(id = analysis)
+                        serializer = VideoDataSerializer(analysed_data)  # Use your VideoDataSerializer to serialize the instance
+                        serialized_data = serializer.data
+                        return Response(
+                            serialized_data,
+                            status=status.HTTP_200_OK
+                        )
+                    else:
+                        analysed_data = {
+                            "message":"Error during video analysis. Please try again or provide a different video."
+                        }
+                        return Response(
+                            analysed_data,
+                            status=status.HTTP_400_BAD_REQUEST,
+                            content_type="application/json" 
+                        )
                 else:
                     analysed_data = {
-                        "message":"Error during video analysis. Please try again or provide a different video."
+                        "message":"Video already with this name."
                     }
+                    os.remove(temp_video_path)
                     return Response(
                         analysed_data,
-                        status=status.HTTP_400_BAD_REQUEST,
-                        content_type="application/json" 
+                        status=status.HTTP_409_CONFLICT,
+                        content_type="application/json"  # Set content type to application/json
                     )
             else:
                 analysed_data = {
-                    "message":"Video already with this name."
+                    "message":"Video not found,Please upload video."
                 }
-                os.remove(temp_video_path)
                 return Response(
                     analysed_data,
-                    status=status.HTTP_409_CONFLICT,
+                    status=status.HTTP_404_NOT_FOUND,
                     content_type="application/json"  # Set content type to application/json
                 )
         
@@ -2262,3 +2296,79 @@ def analyse_live_video(video_file):
         print(e)
         pass
     return data_id
+
+
+
+#Image analysis API code start ******************************************
+
+class ImageAnalysisView(APIView):
+    parser_classes = (MultiPartParser, FormParser)
+    serializer_class = ImageSerializer
+    
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            try:
+                image_file = serializer.validated_data['image']
+            except KeyError:
+                error_response = {
+                    "message": "Image field is required. Please check image field correctly defined.",
+                }
+                return Response(error_response, status=status.HTTP_400_BAD_REQUEST)      
+            
+            try:
+                image_data = ImageRecognition.objects.get(name=image_file)
+                image_data = {
+                    "message":"Image already with this name."
+                }
+                return Response(
+                    image_data,
+                    status=status.HTTP_409_CONFLICT,
+                    content_type="application/json"  # Set content type to application/json
+                )
+            except ImageRecognition.DoesNotExist:
+                if image_file:
+                    # Check image size
+                    if hasattr(image_file, 'size') and image_file.size > 10 * 1024 * 1024:
+                        message = "Image size should be less than 10MB."
+                        return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    # Save the uploaded image to a temporary file
+                    with open("temp_image.jpg", "wb") as f:
+                        for chunk in image_file.chunks():
+                            f.write(chunk)
+
+                    # Restrict TensorFlow to use only CPU
+                    tf.config.set_visible_devices([], 'GPU')
+
+                    # Analyze image using DeepFace
+                    face_analysis = DeepFace.analyze(img_path="temp_image.jpg", enforce_detection=False, detector_backend='mtcnn')
+                    emotions = [data['dominant_emotion'] for data in face_analysis]
+
+                    # Save analysis results to the database
+                    image_recognition = ImageRecognition(name=image_file, image=image_file,image_analysis_data = face_analysis,dominant_emotion=str(emotions))
+                    image_recognition.save()
+                    image_data = ImageRecognition.objects.get(name=image_file)
+                    # You may want to delete the temporary file after analysis
+                    os.remove("temp_image.jpg")
+
+                    serializer = ImageDataSerializer(image_data)  # Use your VideoDataSerializer to serialize the instance
+                    serialized_data = serializer.data
+                    return Response(
+                        serialized_data,
+                        status=status.HTTP_200_OK
+                    )
+                else:
+                    image_data = {
+                        "message":"Image not found,Please upload an image."
+                    }
+                    return Response(
+                        image_data,
+                        status=status.HTTP_404_NOT_FOUND,
+                        content_type="application/json" 
+                    )
+        
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
