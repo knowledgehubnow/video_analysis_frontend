@@ -10,7 +10,8 @@ from deepface import DeepFace
 from .models import *
 import ast
 import time
-from PyPDF2 import PdfReader
+from pdfminer.high_level import extract_text
+from io import BytesIO
 from pydub import AudioSegment  # Import AudioSegment for voice modulation analysis
 import nltk
 from nltk.sentiment import SentimentIntensityAnalyzer  # Import SentimentIntensityAnalyzer for sentiment analysis
@@ -917,38 +918,45 @@ def analized_image_list(request):
         "all_data":all_data
     })
 
-
 def analyze_pdf(request):
     if request.method == "POST":
         pdf_file = request.FILES.get("pdf")  # Use request.FILES to handle file uploads
         if pdf_file:
             try:
-                reader = PdfReader(pdf_file)
-                # Process the PDF file using 'reader' here
-                print(reader)
-                print(len(reader.pages)) 
-                all_text = ""
-                for page_num in range(len(reader.pages)):
-                    page = reader.pages[page_num]
-                    text = page.extract_text()
-                    all_text += text + "\n"
-                
-                print(all_text)
-                pdf_data = AnalyzePDF(pdf_name = pdf_file, pdf_file = pdf_file,pdf_text=all_text)
-                pdf_data.save()
-                return render(request, "pdf_upload.html",{
-                    "pdf_name":pdf_file,
-                    "all_text":all_text
-                })
+                try:
+                    pdf_data = AnalyzePDF.objects.get(pdf_name = pdf_file)
+                except:
+                    pdf_data = None
+                if pdf_file is None:
+                    # Convert the InMemoryUploadedFile to a BytesIO object
+                    pdf_content = pdf_file.read()
+                    
+                    # Extract text using pdfminer
+                    all_text = extract_text(BytesIO(pdf_content))
+                    print(all_text)
+                    pdf_data = AnalyzePDF(pdf_name = pdf_file, pdf_file = pdf_file,pdf_text=all_text)
+                    pdf_data.save()
+                    return render(request, "pdf_upload.html",{
+                        "pdf_name":pdf_file,
+                        "all_text":all_text
+                    })
+                else:
+                    return render(request, "pdf_upload.html",{
+                        "message":"PDF already exists with same name.",
+                        "tag":"danger"
+                    })
             except Exception as e:
                 print(f"Error reading PDF: {e}")
                 return render(request, "pdf_upload.html",{
-                    "message":f"Error reading PDF: {e}",
+                    "message":"Something wrong, Please try again.",
+                    "tag":"danger"
                 })
+
         else:
             print("No PDF file uploaded")
             return render(request, "pdf_upload.html",{
                     "message":"No PDF file uploaded",
+                    "tag":"danger"
                 })
 
     return render(request, "pdf_upload.html")
