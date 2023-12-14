@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import VideoRecognition
+from .models import VideoRecognition,ImageRecognition
 
 class VideoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -11,3 +11,12 @@ class VideoDataSerializer(serializers.ModelSerializer):
         model = VideoRecognition
         fields = "__all__"
 
+class ImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ImageRecognition
+        fields = ('image',)
+
+class ImageDataSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ImageRecognition
+        fields = "__all__"

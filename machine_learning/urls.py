@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import path,include
 from . import views
-from .views import VideoUploadView,LiveVideoAnalysisView,LiveAnalysisView
+from .views import *
 
 urlpatterns = [
     path('',views.scan_face,name = "scan_face"),
@@ -16,4 +16,5 @@ urlpatterns = [
     path('scan/live/face/',views.scan_live_face,name = "scan_live_face"),
     path('live/video/analysis/', LiveVideoAnalysisView.as_view(), name='live_video'),
     path('live/analysis/', LiveAnalysisView.as_view(), name='live_analysis'),
+    path('image/analysis/', ImageAnalysisView.as_view(), name='image_analysi')
 ]
