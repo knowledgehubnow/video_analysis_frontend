@@ -923,41 +923,43 @@ def analyze_pdf(request):
         pdf_file = request.FILES.get("pdf")  # Use request.FILES to handle file uploads
         if pdf_file:
             try:
-                try:
-                    pdf_data = AnalyzePDF.objects.get(pdf_name = pdf_file)
-                except:
-                    pdf_data = None
-                if pdf_file is None:
+                # Check if PDF with the same name exists
+                pdf_data = AnalyzePDF.objects.filter(pdf_name=pdf_file).first()
+                print(pdf_data)
+
+                if pdf_data is None:
                     # Convert the InMemoryUploadedFile to a BytesIO object
                     pdf_content = pdf_file.read()
                     
                     # Extract text using pdfminer
                     all_text = extract_text(BytesIO(pdf_content))
                     print(all_text)
-                    pdf_data = AnalyzePDF(pdf_name = pdf_file, pdf_file = pdf_file,pdf_text=all_text)
+
+                    # Save to the database
+                    pdf_data = AnalyzePDF(pdf_name=pdf_file, pdf_file=pdf_file, pdf_text=all_text)
                     pdf_data.save()
-                    return render(request, "pdf_upload.html",{
-                        "pdf_name":pdf_file,
-                        "all_text":all_text
+
+                    return render(request, "pdf_upload.html", {
+                        "pdf_name": pdf_file,
+                        "all_text": all_text,
                     })
                 else:
-                    return render(request, "pdf_upload.html",{
-                        "message":"PDF already exists with same name.",
-                        "tag":"danger"
+                    return render(request, "pdf_upload.html", {
+                        "message": "PDF already exists with the same name.",
+                        "tag": "danger",
                     })
             except Exception as e:
                 print(f"Error reading PDF: {e}")
-                return render(request, "pdf_upload.html",{
-                    "message":"Something wrong, Please try again.",
-                    "tag":"danger"
+                return render(request, "pdf_upload.html", {
+                    "message": "Something went wrong. Please try again.",
+                    "tag": "danger",
                 })
-
         else:
             print("No PDF file uploaded")
-            return render(request, "pdf_upload.html",{
-                    "message":"No PDF file uploaded",
-                    "tag":"danger"
-                })
+            return render(request, "pdf_upload.html", {
+                "message": "No PDF file uploaded",
+                "tag": "danger",
+            })
 
     return render(request, "pdf_upload.html")
 
