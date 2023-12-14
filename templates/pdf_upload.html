@@ -18,6 +18,9 @@
                         <a href="{% url 'analyzed_pdf_list' %}"><button type="button" class="btn btn-warning">Analyzed PDF List</button></a>
                     </div>
                 </div>
+                {% if message %}
+                    <div class="alert alert-{{tag}} text-center " role="alert">{{ message }}</div>
+                {% endif %}
                 <div class="card">
                     <div class="card-header text-center fw-bold">
                         Analyze PDF
@@ -52,9 +55,6 @@
         {% if all_text %}
         <div class="row justify-content-md-center my-2">
             <div class="col-md-6 m-1">
-                {% if message %}
-                    <div class="alert alert-{{tag}} text-center " role="alert">{{ message }}</div>
-                {% endif %}
                 <div class="card">
                     <div class="card-header text-center fw-bold">
                         PDF Response
