@@ -20,3 +20,8 @@ class ImageDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = ImageRecognition
         fields = "__all__"
+
+class VideoDataListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VideoRecognition
+        fields = "__all__"

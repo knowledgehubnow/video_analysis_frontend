@@ -2308,6 +2308,14 @@ def analyse_live_video(video_file):
     return data_id
 
 
+# Analysed video list api code ************(())
+class AnalysedVideoListView(APIView):
+    print("jvfeuvrfhfkvjfgvfvfjvf")
+    def get(self, request, *args, **kwargs):
+        all_data = VideoRecognition.objects.all()
+        serializer = VideoDataListSerializer(all_data, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 #Image analysis API code start ******************************************
 

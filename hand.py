@@ -1,12 +1,13 @@
-# from pdfminer.high_level import extract_text
+import requests
 
-# text = extract_text("/home/manish/Documents/Manish Internship certificate.pdf")
-# print(text)
+url = "https://ai.eduagentapp.com/live/video/analysis/"
 
-import PyPDF2
+payload = {}
+files=[
+  ('video_file',('/home/manish/Downloads/c9.mp4',open('/home/manish/Downloads/c9.mp4','rb'),'application/octet-stream'))
+]
+headers = {}
 
-# with open('/home/manish/Documents/Manish Internship certificate.pdf', 'rb') as file:
-pdf_reader = PyPDF2.PdfReader('/home/manish/Documents/Manish Internship certificate.pdf')
-text = ''
-for page_num in range(len(pdf_reader.pages)):
-    text += pdf_reader.pages[page_num].extract_text()
+response = requests.request("POST", url, headers=headers, data=payload, files=files)
+print(response)
+print(response.text)
