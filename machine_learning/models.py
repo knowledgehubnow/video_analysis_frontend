@@ -16,7 +16,7 @@ class ImageRecognition(models.Model):
 
 class VideoRecognition(models.Model):
     name = models.CharField(max_length=255, null=True, blank=True)
-    analysis_score = models.FloatField(default=75)
+    analysis_score = models.FloatField(default=0.0)
     word_per_minute = models.FloatField(null=True, blank=True)
     language_analysis = models.JSONField(null=True, blank=True,default=None)
     voice_modulation_analysis = models.JSONField(null=True, blank=True, default=None)
