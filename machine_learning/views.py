@@ -2308,10 +2308,9 @@ def analyse_live_video(video_file):
     return data_id
 
 
-# Analysed video list api code ************(())
+# Analysed video list api code **********************************
 class AnalysedVideoListView(APIView):
-    print("jvfeuvrfhfkvjfgvfvfjvf")
-    def get(self, request, *args, **kwargs):
+    def get(self,request):
         all_data = VideoRecognition.objects.all()
         serializer = VideoDataListSerializer(all_data, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -2390,3 +2389,11 @@ class ImageAnalysisView(APIView):
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
         )
+
+
+# Analysed video list api code **************************
+class AnalysedImageListView(APIView):
+    def get(self,request):
+        all_data = ImageRecognition.objects.all()
+        serializer = ImageDataListSerializer(all_data, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

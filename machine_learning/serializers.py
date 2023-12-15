@@ -11,6 +11,11 @@ class VideoDataSerializer(serializers.ModelSerializer):
         model = VideoRecognition
         fields = "__all__"
 
+class VideoDataListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VideoRecognition
+        fields = "__all__"
+
 class ImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ImageRecognition
@@ -21,7 +26,9 @@ class ImageDataSerializer(serializers.ModelSerializer):
         model = ImageRecognition
         fields = "__all__"
 
-class VideoDataListSerializer(serializers.ModelSerializer):
+class ImageDataListSerializer(serializers.ModelSerializer):
     class Meta:
-        model = VideoRecognition
+        model = ImageRecognition
         fields = "__all__"
+
+
