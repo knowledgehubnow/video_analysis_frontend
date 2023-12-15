@@ -21,6 +21,7 @@
                     </div>
                     <div class="card-body">
                         <h5 class="card-title">{{ data.name|truncatechars:20 }}</h5>
+                        <p class="card-text"><span class="fw-bold">Analysis Score:</span> <span class="badge bg-success">{{ data.analysis_score }} </span></p>
                         <p class="card-text"><span class="fw-bold">Speech Rate:</span> <span class="badge bg-success">{{ data.word_per_minute }} </span>words/min.</p>
                         <p class="card-text"><span class="fw-bold">Language Analysis:</span> <span class="badge bg-success">{{ data.language_analysis.sentiment }} </span></p>
                         <p class="card-text"><span class="fw-bold">Voice Modulation Analysis:</span> <span class="badge bg-success">{{ data.voice_modulation_analysis.modulation_rating }} </span></p>
