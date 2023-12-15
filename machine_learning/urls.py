@@ -16,5 +16,6 @@ urlpatterns = [
     path('scan/live/face/',views.scan_live_face,name = "scan_live_face"),
     path('live/video/analysis/', LiveVideoAnalysisView.as_view(), name='live_video'),
     path('live/analysis/', LiveAnalysisView.as_view(), name='live_analysis'),
-    path('image/analysis/', ImageAnalysisView.as_view(), name='image_analysi')
+    path('image/analysis/', ImageAnalysisView.as_view(), name='image_analysi'),
+    path('analysed/video/list/', AnalysedVideoListView.as_view())
 ]
