@@ -389,8 +389,7 @@ def scan_face(request):
             try:
                 os.remove(f"{video_file}")
                 os.remove(f"output_{video_file}")
-                # os.remove(audio_file_path)
-                os.remove(f"speeches/{audio_file_path}")
+                os.remove(audio_file_path)
             except:
                 pass
             return redirect("analized_video_detail",data.id)
@@ -729,7 +728,7 @@ def analyze_language(text):
         sentiment = 'Neutral'
     return {
         "sentiment": sentiment,
-        "sentiment_scores": sentiment_scores
+        # "sentiment_scores": sentiment_scores
     }
 
 def voice_monotone(audio_file_path):
@@ -774,7 +773,7 @@ def analyze_voice_modulation(audio_file_path):
         modulation_rating = "Not Available"
 
     return {
-        "duration_seconds": len(audio) / 1000,  # Duration in seconds
+        # "duration_seconds": len(audio) / 1000,  # Duration in seconds
         "pitch": pitch,  # Pitch in dB
         "modulation_rating": modulation_rating,
         # Add more voice modulation characteristics as needed
@@ -1284,7 +1283,7 @@ def analyse_video(video_file):
     try:
         os.remove(f"{video_file}")
         os.remove(f"output_{video_file}")
-        os.remove(f"speeches/{audio_file_path}")
+        os.remove(audio_file_path)
     except:
         pass
     return data
