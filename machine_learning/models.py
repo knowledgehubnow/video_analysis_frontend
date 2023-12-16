@@ -40,11 +40,6 @@ class VideoRecognition(models.Model):
     def __str__(self):
         return self.name
         
-    def get_voice_emotion(self):
-        if self.voice_emotion:
-            return json.loads(self.voice_emotion)
-        else:
-            return []
 
 class AnalyzePDF(models.Model):
     pdf_name = models.CharField(max_length=255, null=True, blank=True)
