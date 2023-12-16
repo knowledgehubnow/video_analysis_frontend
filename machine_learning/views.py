@@ -432,7 +432,7 @@ def get_analysis_score(speech_rate, filler_words, words_list, b_confidence, eye_
         negative_point_data += 1
     if face_detected == "Appropriate Facial Not Detected.":
         negative_point_data += 1
-    if body_posture is None:
+    if body_posture is None or body_posture == "Bad Body Posture":
         negative_point_data += 1
     if not voice_emo:
         negative_point_data += 1
