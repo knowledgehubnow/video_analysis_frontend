@@ -439,7 +439,8 @@ def get_analysis_score(speech_rate, filler_words, words_list, b_confidence, eye_
 
     print(negative_point_data)
     percentage = (negative_point_data / 15) * 100
-    score = 100 - percentage
+    round_percentage = round(percentage, 2)
+    score = 100 - round_percentage
     return score  # Invert the score to get a percentage
 
 
