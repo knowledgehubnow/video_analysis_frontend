@@ -22,9 +22,9 @@ class VideoRecognition(models.Model):
     voice_modulation_analysis = models.JSONField(null=True, blank=True, default=None)
     energy_level_analysis = models.CharField(max_length=255, null=True, blank=True)
     video_file = models.FileField(upload_to='videos/', null=True, blank=True)
-    filler_words_used = models.TextField(null=True, blank=True)
-    frequently_used_word = models.TextField(null=True, blank=True)
-    voice_emotion = models.TextField(null=True, blank=True)
+    filler_words_used = models.JSONField(null=True, blank=True)
+    frequently_used_word = models.JSONField(null=True, blank=True)
+    voice_emotion = models.JSONField(null=True, blank=True, default=None)
     confidence = models.CharField(max_length=100,null=True, blank=True)
     eye_bling = models.CharField(max_length=100,null=True, blank=True)
     hand_movement = models.CharField(max_length=100,null=True, blank=True)
@@ -39,18 +39,6 @@ class VideoRecognition(models.Model):
 
     def __str__(self):
         return self.name
-    
-    def filler_words(self):
-        if self.filler_words_used:
-            return json.loads(self.filler_words_used)
-        else:
-            return []
-
-    def frequently_word(self):
-        if self.frequently_used_word:
-            return json.loads(self.frequently_used_word)
-        else:
-            return []
         
     def get_voice_emotion(self):
         if self.voice_emotion:

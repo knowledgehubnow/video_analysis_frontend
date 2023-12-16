@@ -28,19 +28,19 @@
                         <p class="card-text"><span class="fw-bold">Energy Level Analysis:</span> <span class="badge bg-success">{{ data.energy_level_analysis }} </span></p>
                         <p class="card-text">
                             <span class="fw-bold">Filler Words:</span> 
-                            {% for filler_word in data.filler_words %}
+                            {% for filler_word in data.filler_words_used %}
                                 <span class="badge bg-success">{{ filler_word }} </span>
                             {% endfor %}
                         </p>
                         <p class="card-text">
                             <span class="fw-bold">Frequently Used Words:</span> 
-                            {% for frequently_used in data.frequently_word %}
+                            {% for frequently_used in data.frequently_used_word %}
                                 <span class="badge bg-success">{{ frequently_used }} </span>
                             {% endfor %}
                         </p>
                         <p class="card-text">
                             <span class="fw-bold">Voice Emotion:</span> 
-                            {% for emo in data.get_voice_emotion %}
+                            {% for emo in data.voice_emotion %}
                                 <span class="badge bg-success">{{ emo }} </span>
                             {% endfor %}
                         </p>

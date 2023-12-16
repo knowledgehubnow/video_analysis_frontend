@@ -158,15 +158,9 @@ def scan_face(request):
                 else:
                     greeting = None
 
-                frequently_used_words = json.dumps(words_list)
-                filler_words_string = json.dumps(filler_words)
-
                 emo = voice_emotion(audio_file_path)
                 # Convert NumPy array to Python list
-                emo_list = emo.tolist() if isinstance(emo, np.ndarray) else emo
-
-                # Convert to JSON
-                voice_emo = json.dumps(emo_list)
+                voice_emo = emo.tolist() if isinstance(emo, np.ndarray) else emo
 
             except FileNotFoundError as e:
                 print(f"File not found: {e}")
@@ -379,10 +373,10 @@ def scan_face(request):
                 face_detected = "Appropriate Facial Not Detected."
             
             # Getting Total Video Ana;ysis Score ####################
-            t_score = get_analysis_score(speech_rate,filler_words_string,frequently_used_words,b_confidence,eye_bling,hand_move,
-                                         eye_contact,thanks,greeting,greet_gesture,monotone,pauses,face_detected,body_posture)
+            t_score = get_analysis_score(speech_rate,filler_words,words_list,b_confidence,eye_bling,hand_move,
+                                         eye_contact,thanks,greeting,greet_gesture,monotone,pauses,face_detected,body_posture,voice_emo)
             try:
-                data = VideoRecognition(name=video_file,analysis_score = t_score,language_analysis= language_analysis,voice_modulation_analysis = voice_modulation,energy_level_analysis= energy_category,video_file=video_file, word_per_minute=speech_rate,filler_words_used=filler_words_string,frequently_used_word=frequently_used_words,voice_emotion = voice_emo,
+                data = VideoRecognition(name=video_file,analysis_score = t_score,language_analysis= language_analysis,voice_modulation_analysis = voice_modulation,energy_level_analysis= energy_category,video_file=video_file, word_per_minute=speech_rate,filler_words_used=filler_words,frequently_used_word=words_list,voice_emotion = voice_emo,
                                         confidence = b_confidence,eye_bling = eye_bling,hand_movement= hand_move,eye_contact=eye_contact,thanks_gesture=thanks,greeting=greeting,greeting_gesture=greet_gesture,voice_tone = monotone,voice_pauses=pauses,appropriate_facial = face_detected,body_posture=body_posture)
                 data.save()
                 
@@ -407,18 +401,16 @@ def scan_face(request):
     return render(request, 'upload.html')
 
 
-def get_analysis_score(speech_rate, filler_words_string, frequently_used_words, b_confidence, eye_bling, hand_move,
-                       eye_contact, thanks, greeting, greet_gesture, monotone, pauses, face_detected, body_posture):
+def get_analysis_score(speech_rate, filler_words, words_list, b_confidence, eye_bling, hand_move,
+                       eye_contact, thanks, greeting, greet_gesture, monotone, pauses, face_detected, body_posture,voice_emo):
 
     negative_point_data = 0
-    filler_words_list = ast.literal_eval(filler_words_string)
-    frequently_used_words_list = ast.literal_eval(frequently_used_words)
 
     if speech_rate == 0.0:
         negative_point_data += 1
-    if not filler_words_list:
+    if not filler_words:
         negative_point_data += 1
-    if not frequently_used_words_list:
+    if not words_list:
         negative_point_data += 1
     if b_confidence == "Not confident body posture":
         negative_point_data += 1
@@ -442,8 +434,11 @@ def get_analysis_score(speech_rate, filler_words_string, frequently_used_words, 
         negative_point_data += 1
     if body_posture is None:
         negative_point_data += 1
+    if not voice_emo:
+        negative_point_data += 1
 
-    percentage = (negative_point_data / 14) * 100
+    print(negative_point_data)
+    percentage = (negative_point_data / 15) * 100
     score = 100 - percentage
     return score  # Invert the score to get a percentage
 
@@ -1130,13 +1125,13 @@ def analyse_video(video_file):
             greeting = "Greeting included"
         else:
             greeting = None
-        frequently_used_words = json.dumps(words_list)
-        filler_words_string = json.dumps(filler_words)
+        # frequently_used_words = json.dumps(words_list)
+        # filler_words_string = json.dumps(filler_words)
         emo = voice_emotion(audio_file_path)
         # Convert NumPy array to Python list
-        emo_list = emo.tolist() if isinstance(emo, np.ndarray) else emo
+        voice_emo = emo.tolist() if isinstance(emo, np.ndarray) else emo
         # Convert to JSON
-        voice_emo = json.dumps(emo_list)
+        # voice_emo = json.dumps(emo_list)
     except FileNotFoundError as e:
         print(f"File not found: {e}")
     except Exception as e:
@@ -1319,10 +1314,10 @@ def analyse_video(video_file):
         face_detected = "Appropriate Facial Not Detected." 
 
     # Getting Total Video Ana;ysis Score ####################
-    t_score = get_analysis_score(speech_rate,filler_words_string,frequently_used_words,b_confidence,eye_bling,hand_move,
-                            eye_contact,thanks,greeting,greet_gesture,monotone,pauses,face_detected,body_posture)           
+    t_score = get_analysis_score(speech_rate,filler_words,words_list,b_confidence,eye_bling,hand_move,
+                            eye_contact,thanks,greeting,greet_gesture,monotone,pauses,face_detected,body_posture,voice_emo)           
     try:
-        video_data = VideoRecognition(name=video_file,analysis_score = t_score,language_analysis= language_analysis,voice_modulation_analysis = voice_modulation,energy_level_analysis= energy_category,video_file=video_file, word_per_minute=speech_rate,filler_words_used=filler_words_string,frequently_used_word=frequently_used_words,voice_emotion = voice_emo,
+        video_data = VideoRecognition(name=video_file,analysis_score = t_score,language_analysis= language_analysis,voice_modulation_analysis = voice_modulation,energy_level_analysis= energy_category,video_file=video_file, word_per_minute=speech_rate,filler_words_used=filler_words,frequently_used_word=words_list,voice_emotion = voice_emo,
                                 confidence = b_confidence,eye_bling = eye_bling,hand_movement= hand_move,eye_contact=eye_contact,thanks_gesture=thanks,greeting=greeting,greeting_gesture=greet_gesture,voice_tone = monotone,voice_pauses=pauses,appropriate_facial = face_detected,body_posture=body_posture)
         video_data.save()
         data = video_data.id
