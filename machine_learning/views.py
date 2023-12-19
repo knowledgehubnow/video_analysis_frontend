@@ -341,13 +341,10 @@ def scan_face(request):
                 video_output.write(image)
                 # new_width = 500
                 # new_height = 600
-
                 # # Resize the image
                 # resized_image = cv2.resize(image, (new_width, new_height))
-
                 # # Display the frame.
                 # cv2.imshow('Video', resized_image)
-
                 # # Break the loop if 'q' key is pressed.
                 # if cv2.waitKey(1) & 0xFF == ord('q'):
                 #     break
