@@ -45,6 +45,7 @@ from moviepy.editor import VideoFileClip, AudioFileClip
 import pyaudio
 import threading
 import wave
+from django.core.files import File
 
 
 mp_pose = mp.solutions.pose
@@ -204,6 +205,12 @@ def scan_face(request):
                 if not success:
                     print("Null Frames")
                     break
+                # Specify the output thumbnail filename
+                thumbnail_filename = f"thumbnail_{video_file}.jpg"
+
+                # Save the first frame as a thumbnail image
+                cv2.imwrite(thumbnail_filename, image)
+
                 frame_count += 1
                 if frame_count % frame_skip != 0:
                     continue  # Skip frames
@@ -363,7 +370,7 @@ def scan_face(request):
             t_score = get_analysis_score(speech_rate,filler_words,words_list,b_confidence,eye_bling,hand_move,
                                          eye_contact,thanks,greeting,greet_gesture,monotone,pauses,face_detected,body_posture,voice_emo)
             try:
-                data = VideoRecognition(name=video_file,analysis_score = t_score,language_analysis= language_analysis,voice_modulation_analysis = voice_modulation,energy_level_analysis= energy_category,video_file=video_file, word_per_minute=speech_rate,filler_words_used=filler_words,frequently_used_word=words_list,voice_emotion = voice_emo,
+                data = VideoRecognition(thumb_img= File(open(thumbnail_filename, 'rb')),name=video_file,analysis_score = t_score,language_analysis= language_analysis,voice_modulation_analysis = voice_modulation,energy_level_analysis= energy_category,video_file=video_file, word_per_minute=speech_rate,filler_words_used=filler_words,frequently_used_word=words_list,voice_emotion = voice_emo,
                                         confidence = b_confidence,eye_bling = eye_bling,hand_movement= hand_move,eye_contact=eye_contact,thanks_gesture=thanks,greeting=greeting,greeting_gesture=greet_gesture,voice_tone = monotone,voice_pauses=pauses,appropriate_facial = face_detected,body_posture=body_posture)
                 data.save()
                 
@@ -374,6 +381,7 @@ def scan_face(request):
                 os.remove(f"{video_file}")
                 os.remove(f"output_{video_file}")
                 os.remove(audio_file_path)
+                os.remove(thumbnail_filename)
             except:
                 pass
             return redirect("analized_video_detail",data.id)
@@ -1161,6 +1169,13 @@ def analyse_video(video_file,user):
         if not success:
             print("Null Frames")
             break
+
+        # Specify the output thumbnail filename
+        thumbnail_filename = f"thumbnail_{video_file}.jpg"
+
+        # Save the first frame as a thumbnail image
+        cv2.imwrite(thumbnail_filename, image)
+
         frame_count += 1
         if frame_count % frame_skip != 0:
             continue  # Skip frames
@@ -1305,7 +1320,7 @@ def analyse_video(video_file,user):
     t_score = get_analysis_score(speech_rate,filler_words,words_list,b_confidence,eye_bling,hand_move,
                             eye_contact,thanks,greeting,greet_gesture,monotone,pauses,face_detected,body_posture,voice_emo)           
     try:
-        video_data = VideoRecognition(user=user,name=video_file,analysis_score = t_score,language_analysis= language_analysis,voice_modulation_analysis = voice_modulation,energy_level_analysis= energy_category,video_file=video_file, word_per_minute=speech_rate,filler_words_used=filler_words,frequently_used_word=words_list,voice_emotion = voice_emo,
+        video_data = VideoRecognition(user=user,thumb_img = File(open(thumbnail_filename, 'rb')),name=video_file,analysis_score = t_score,language_analysis= language_analysis,voice_modulation_analysis = voice_modulation,energy_level_analysis= energy_category,video_file=video_file, word_per_minute=speech_rate,filler_words_used=filler_words,frequently_used_word=words_list,voice_emotion = voice_emo,
                                 confidence = b_confidence,eye_bling = eye_bling,hand_movement= hand_move,eye_contact=eye_contact,thanks_gesture=thanks,greeting=greeting,greeting_gesture=greet_gesture,voice_tone = monotone,voice_pauses=pauses,appropriate_facial = face_detected,body_posture=body_posture)
         video_data.save()
         data = video_data.id
@@ -1316,6 +1331,7 @@ def analyse_video(video_file,user):
         os.remove(f"{video_file}")
         os.remove(f"output_{video_file}")
         os.remove(audio_file_path)
+        os.remove(thumbnail_filename)
     except:
         pass
     return data
