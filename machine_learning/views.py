@@ -138,20 +138,10 @@ def scan_face(request):
                 print(audio_file_path)
                 language_analysis, voice_modulation,energy_category,filler_words,words_list,greeting_words = analyze_language_and_voice(audio_file_path)
                 # Get speech rate
-                speech_rate = calculate_speech_rate(audio_file_path)
+                wpm = calculate_speech_rate(audio_file_path)
+                speech_rate = round(wpm,2)
                 monotone = voice_monotone(audio_file_path)
                 pauses = detect_voice_pauses(audio_file_path)
-                print(f"Speech rate: {speech_rate:.2f} words/min")
-                print("Language Analysis:", language_analysis)
-                print("energy_level Analysis:", energy_category)
-                print("filler_words Analysis:", filler_words)
-                print("frequently_used_words Analysis:", words_list)
-                print("Voice Modulation Analysis:", voice_modulation)
-
-                print("Greeting Word Analysis:", greeting_words)
-
-                print("Voice Tone Analysis:", monotone)
-                print("Voice Pauses Analysis:", pauses)
 
                 if len(greeting_words) > 0:
                     greeting = "Greeting included"
@@ -812,7 +802,7 @@ def analyze_voice_modulation(audio_file_path):
 
     return {
         # "duration_seconds": len(audio) / 1000,  # Duration in seconds
-        "pitch": pitch,  # Pitch in dB
+        "pitch": round(pitch,2),  # Pitch in dB
         "modulation_rating": modulation_rating,
         # Add more voice modulation characteristics as needed
     }
@@ -1107,29 +1097,19 @@ def analyse_video(video_file):
         print(audio_file_path)
         language_analysis, voice_modulation,energy_category,filler_words,words_list,greeting_words = analyze_language_and_voice(audio_file_path)
         # Get speech rate
-        speech_rate = calculate_speech_rate(audio_file_path)
+        wpm = calculate_speech_rate(audio_file_path)
+        speech_rate = round(wpm,2)
         monotone = voice_monotone(audio_file_path)
         pauses = detect_voice_pauses(audio_file_path)
-        print(f"Speech rate: {speech_rate:.2f} words/min")
-        print("Language Analysis:", language_analysis)
-        print("energy_level Analysis:", energy_category)
-        print("filler_words Analysis:", filler_words)
-        print("frequently_used_words Analysis:", words_list)
-        print("Voice Modulation Analysis:", voice_modulation)
-        print("Greeting Word Analysis:", greeting_words)
-        print("Voice Tone Analysis:", monotone)
-        print("Voice Pauses Analysis:", pauses)
+    
         if len(greeting_words) > 0:
             greeting = "Greeting included"
         else:
             greeting = None
-        # frequently_used_words = json.dumps(words_list)
-        # filler_words_string = json.dumps(filler_words)
         emo = voice_emotion(audio_file_path)
         # Convert NumPy array to Python list
         voice_emo = emo.tolist() if isinstance(emo, np.ndarray) else emo
-        # Convert to JSON
-        # voice_emo = json.dumps(emo_list)
+        
     except FileNotFoundError as e:
         print(f"File not found: {e}")
     except Exception as e:
