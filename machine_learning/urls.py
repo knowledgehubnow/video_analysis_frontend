@@ -12,11 +12,8 @@ urlpatterns = [
     path('analyze/pdf/',views.analyze_pdf,name = "analyze_pdf"),
     path('analyzed/pdf/list/',views.analyzed_pdf_list,name = "analyzed_pdf_list"),
     path('analyzed/pdf/view/<int:pdf_id>/',views.analyzed_pdf_view,name = "analyzed_pdf_view"),
-    path('scan/live/face/',views.scan_live_face,name = "scan_live_face"),
     
     path('upload/', VideoUploadView.as_view()),
-    path('live/video/analysis/', LiveVideoAnalysisView.as_view()),
-    path('live/analysis/', LiveAnalysisView.as_view()),
     path('image/analysis/', ImageAnalysisView.as_view()),
     path('analysed/video/list/', AnalysedVideoListView.as_view()),
     path('analysed/image/list/', AnalysedImageListView.as_view())
