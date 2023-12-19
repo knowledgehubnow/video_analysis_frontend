@@ -1024,7 +1024,7 @@ class VideoUploadView(APIView):
                 video_file = serializer.validated_data['video_file']
             except KeyError:
                 error_response = {
-                    "message": "Image field is required. Please check image field correctly defined.",
+                    "message": "Video field is required. Please check video field correctly defined.",
                 }
                 return Response(error_response, status=status.HTTP_400_BAD_REQUEST)
                  
