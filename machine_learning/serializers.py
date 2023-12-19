@@ -4,7 +4,7 @@ from .models import *
 class VideoSerializer(serializers.ModelSerializer):
     class Meta:
         model = VideoRecognition
-        fields = ('video_file',)
+        fields = ('user','video_file',)
 
 class VideoDataSerializer(serializers.ModelSerializer):
     class Meta:
