@@ -1329,12 +1329,20 @@ class AnalysedVideoListView(APIView):
             # Filter data based on the provided user_id
             filtered_data = VideoRecognition.objects.filter(user=user_id)
             serializer = VideoDataListSerializer(filtered_data, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(
+                {
+                    "message":"Data found",
+                    "data":serializer.data,
+                },
+                status=status.HTTP_200_OK
+            )
         else:
-            # If no user_id is provided, return all data
-            all_data = VideoRecognition.objects.all()
-            serializer = VideoDataListSerializer(all_data, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+           return Response(
+                {
+                    "message":"User ID not found",
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 
 #Image analysis API code start ******************************************
