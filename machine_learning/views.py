@@ -1323,10 +1323,18 @@ def analyse_video(video_file,user):
 
 # Analysed video list api code **********************************
 class AnalysedVideoListView(APIView):
-    def get(self,request):
-        all_data = VideoRecognition.objects.all()
-        serializer = VideoDataListSerializer(all_data, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    def get(self, request):
+        user_id = request.query_params.get('user', None)
+        if user_id is not None:
+            # Filter data based on the provided user_id
+            filtered_data = VideoRecognition.objects.filter(user=user_id)
+            serializer = VideoDataListSerializer(filtered_data, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            # If no user_id is provided, return all data
+            all_data = VideoRecognition.objects.all()
+            serializer = VideoDataListSerializer(all_data, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 #Image analysis API code start ******************************************
