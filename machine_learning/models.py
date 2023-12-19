@@ -15,6 +15,7 @@ class ImageRecognition(models.Model):
         return ast.literal_eval(self.dominant_emotion)
 
 class VideoRecognition(models.Model):
+    user = models.BigIntegerField(null = True)
     name = models.CharField(max_length=255, null=True, blank=True)
     analysis_score = models.FloatField(default=0.0)
     word_per_minute = models.FloatField(null=True, blank=True)

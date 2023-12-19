@@ -1010,14 +1010,24 @@ class VideoUploadView(APIView):
     
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
+        print(serializer)
         if serializer.is_valid():
+            try:
+                user = serializer.validated_data['user']
+                print(user)
+            except KeyError:
+                error_response = {
+                    "message": "User ID field is required.",
+                }
+                return Response(error_response, status=status.HTTP_400_BAD_REQUEST)
             try:
                 video_file = serializer.validated_data['video_file']
             except KeyError:
                 error_response = {
                     "message": "Image field is required. Please check image field correctly defined.",
                 }
-                return Response(error_response, status=status.HTTP_400_BAD_REQUEST) 
+                return Response(error_response, status=status.HTTP_400_BAD_REQUEST)
+                 
             
             if video_file:
                 if video_file.size > 10 * 1024 * 1024:
@@ -1045,7 +1055,7 @@ class VideoUploadView(APIView):
                     video_data = None
 
                 if video_data is None:
-                    analysis = analyse_video(video_file)
+                    analysis = analyse_video(video_file,user)
                     if analysis is not None:
                         analysed_data = VideoRecognition.objects.get(id = analysis)
                         serializer = VideoDataSerializer(analysed_data)  # Use your VideoDataSerializer to serialize the instance
@@ -1088,7 +1098,7 @@ class VideoUploadView(APIView):
             status=status.HTTP_400_BAD_REQUEST
         )
     
-def analyse_video(video_file):
+def analyse_video(video_file,user):
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
     eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
     smile_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_smile.xml')   
@@ -1295,7 +1305,7 @@ def analyse_video(video_file):
     t_score = get_analysis_score(speech_rate,filler_words,words_list,b_confidence,eye_bling,hand_move,
                             eye_contact,thanks,greeting,greet_gesture,monotone,pauses,face_detected,body_posture,voice_emo)           
     try:
-        video_data = VideoRecognition(name=video_file,analysis_score = t_score,language_analysis= language_analysis,voice_modulation_analysis = voice_modulation,energy_level_analysis= energy_category,video_file=video_file, word_per_minute=speech_rate,filler_words_used=filler_words,frequently_used_word=words_list,voice_emotion = voice_emo,
+        video_data = VideoRecognition(user=user,name=video_file,analysis_score = t_score,language_analysis= language_analysis,voice_modulation_analysis = voice_modulation,energy_level_analysis= energy_category,video_file=video_file, word_per_minute=speech_rate,filler_words_used=filler_words,frequently_used_word=words_list,voice_emotion = voice_emo,
                                 confidence = b_confidence,eye_bling = eye_bling,hand_movement= hand_move,eye_contact=eye_contact,thanks_gesture=thanks,greeting=greeting,greeting_gesture=greet_gesture,voice_tone = monotone,voice_pauses=pauses,appropriate_facial = face_detected,body_posture=body_posture)
         video_data.save()
         data = video_data.id
