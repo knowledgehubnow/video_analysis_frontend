@@ -1,58 +1,19 @@
-import os
-import cv2
-import numpy as np
-from keras.preprocessing import image
-import warnings
-warnings.filterwarnings("ignore")
-from keras.preprocessing.image import load_img, img_to_array 
-from keras.models import  load_model
-import matplotlib.pyplot as plt
-import numpy as np
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+import speech_recognition as sr
 
-# load model
-model = load_model("best_model.h5")
+audio_file_path = "/home/manish/Desktop/monteage/new_face_code/speeches/file_20231220052415.wav"
+recognizer = sr.Recognizer()
 
+with sr.AudioFile(audio_file_path) as source:
+    audio_data = recognizer.record(source)
 
-face_haar_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+try:
+    transcribed_text = recognizer.recognize_google(audio_data)
+    sentiment = SentimentIntensityAnalyzer()
+    sent_1 = sentiment.polarity_scores(transcribed_text)
+    print("Sentiment of text 1:", sent_1)
+except sr.UnknownValueError:
+    print("Google Speech Recognition could not understand audio")
+except sr.RequestError as e:
+    print(f"Could not request results from Google Speech Recognition service; {e}")
 
-
-cap = cv2.VideoCapture(0)
-frame_skip = 11
-frame_count = 0  # Initialize the frame count
-while True:
-    ret, test_img = cap.read()  # captures frame and returns boolean value and captured image
-    if not ret:
-        continue
-    frame_count += 1
-    if frame_count % frame_skip != 0:
-        continue  # Skip frames
-    gray_img = cv2.cvtColor(test_img, cv2.COLOR_BGR2RGB)
-
-    faces_detected = face_haar_cascade.detectMultiScale(gray_img, 1.32, 5)
-
-    for (x, y, w, h) in faces_detected:
-        cv2.rectangle(test_img, (x, y), (x + w, y + h), (255, 0, 0), thickness=7)
-        roi_gray = gray_img[y:y + w, x:x + h]  # cropping region of interest i.e. face area from  image
-        roi_gray = cv2.resize(roi_gray, (224, 224))
-        img_pixels = image.img_to_array(roi_gray)
-        img_pixels = np.expand_dims(img_pixels, axis=0)
-        img_pixels /= 255
-
-        predictions = model.predict(img_pixels)
-
-        # find max indexed array
-        max_index = np.argmax(predictions[0])
-
-        emotions = ('angry', 'disgust', 'fear', 'happy', 'sad', 'surprise', 'neutral')
-        predicted_emotion = emotions[max_index]
-
-        cv2.putText(test_img, predicted_emotion, (int(x), int(y)), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-
-    resized_img = cv2.resize(test_img, (1000, 700))
-    cv2.imshow('Facial emotion analysis ', resized_img)
-
-    if cv2.waitKey(10) == ord('q'):  # wait until 'q' key is pressed
-        break
-
-cap.release()
-cv2.destroyAllWindows
