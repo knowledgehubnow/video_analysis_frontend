@@ -384,8 +384,6 @@ def scan_face(request):
             facial_expression_ratio = (emotion_change_ratio + eye_contact_ratio)/2
             facial_expression_score = round(facial_expression_ratio,2)
 
-            print(type(language_analysis))
-            print(language_sentiment_analysis)
             if not filler_words:
                 language_analysis_score = language_sentiment_analysis["sentiment_score_average"] * 100
                 language_analysis_average = 0.0
@@ -400,7 +398,7 @@ def scan_face(request):
             
             body_confidence_score = round((confidence_ratio * 100),2)
 
-            voice_modulation_score = (energy_score + voice_modulation_data["percentage_modulation"])/2
+            voice_modulation_score = round((energy_score + voice_modulation_data["percentage_modulation"])/2,2)
 
             total_len = total_detected_time + total_not_detected_time
             ratio = total_detected_time/total_len
@@ -1435,8 +1433,7 @@ def analyse_video(video_file,user):
     
     body_confidence_score = round((confidence_ratio * 100),2)
 
-    voice_modulation_score = (energy_score + voice_modulation_data["percentage_modulation"])/2
-    print(body_confidence_score)
+    voice_modulation_score = round((energy_score + voice_modulation_data["percentage_modulation"])/2,2)
 
     total_len = total_detected_time + total_not_detected_time
     ratio = total_detected_time/total_len
@@ -1445,7 +1442,7 @@ def analyse_video(video_file,user):
     else:
         face_detected = "Appropriate Facial Not Detected." 
 
-    # Getting Total Video Ana;ysis Score ####################
+    # Getting Total Video Analysis Score ####################
     t_score = get_analysis_score(speech_rate,filler_words,words_list,b_confidence,eye_bling,hand_move,
                             eye_contact,thanks,greeting,greet_gesture,monotone,pauses,face_detected,body_posture,voice_emo)           
     try:
