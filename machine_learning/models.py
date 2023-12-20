@@ -21,7 +21,7 @@ class VideoRecognition(models.Model):
     video_file = models.FileField(upload_to='videos/', null=True, blank=True)
     analysis_score = models.FloatField(default=0.0)
     word_per_minute = models.FloatField(null=True, blank=True)
-    language_analysis = models.JSONField(null=True, blank=True,default=None)
+    language_analysis = models.CharField(max_length = 100,null=True, blank=True)
     voice_modulation_analysis = models.JSONField(null=True, blank=True, default=None)
     energy_level_analysis = models.CharField(max_length=255, null=True, blank=True)
     filler_words_used = models.JSONField(null=True, blank=True)
@@ -38,6 +38,9 @@ class VideoRecognition(models.Model):
     voice_pauses = models.CharField(max_length=100,null=True, blank=True)
     appropriate_facial = models.CharField(max_length=100,null=True, blank=True)
     body_posture = models.CharField(max_length=100,null=True, blank=True)
+    body_language_score = models.FloatField(null=True, blank=True)
+    facial_expression_score = models.FloatField(null=True, blank=True)
+    language_analysis_score = models.FloatField(null=True, blank=True)
 
     def __str__(self):
         return self.name
