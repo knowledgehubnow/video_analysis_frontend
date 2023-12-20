@@ -28,11 +28,16 @@
                             </div>
                             <div class="col-8">
                                 <div class="progress" role="progressbar" aria-label="Success example" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">
-                                    <div class="progress-bar bg-success" style="width: {{data.analysis_score}}%">{{ data.analysis_score }}%</div>
+                                    <div class="progress-bar bg-success" style="width: {{data.analysis_score}}%">{{ data.analysis_score }} %</div>
                                 </div>
                             </div>
                         </div>
                         <hr>
+                        <p class="card-text"><span class="fw-bold">Body Language Score:</span> <span class="badge bg-success">{{ data.body_language_score }} %</span></p>
+                        <p class="card-text"><span class="fw-bold">Facial Expression Score:</span> <span class="badge bg-success">{{ data.facial_expression_score }} %</span></p>
+                        <p class="card-text"><span class="fw-bold">Language Analysis Score:</span> <span class="badge bg-success">{{ data.language_analysis_score }} %</span></p>
+                        <p class="card-text"><span class="fw-bold">Voice modulation score:</span> <span class="badge bg-success">{{ data.voice_modulation_score }} %</span></p>
+                        <p class="card-text"><span class="fw-bold">Body confidence score:</span> <span class="badge bg-success">{{ data.body_confidence_score }} %</span></p>
                         <p class="card-text"><span class="fw-bold">Speech Rate:</span> <span class="badge bg-success">{{ data.word_per_minute }} </span>words/min.</p>
                         <p class="card-text"><span class="fw-bold">Language Analysis:</span> <span class="badge bg-success">{{ data.language_analysis }} </span></p>
                         <p class="card-text"><span class="fw-bold">Voice Modulation Analysis:</span> <span class="badge bg-success">{{ data.voice_modulation_analysis.modulation_rating }} </span></p>
