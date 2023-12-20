@@ -41,6 +41,8 @@ class VideoRecognition(models.Model):
     body_language_score = models.FloatField(null=True, blank=True)
     facial_expression_score = models.FloatField(null=True, blank=True)
     language_analysis_score = models.FloatField(null=True, blank=True)
+    voice_modulation_score = models.FloatField(null=True, blank=True)
+    body_confidence_score = models.FloatField(null=True, blank=True)
 
     def __str__(self):
         return self.name

@@ -122,13 +122,15 @@ def scan_face(request):
             try:
                 audio_file_path = generate_audio_file(f"{video_file}")
                 print(audio_file_path)
-                language_sentiment_analysis, voice_modulation,energy_category,filler_words,words_list,greeting_words = analyze_language_and_voice(audio_file_path)
+                language_sentiment_analysis, voice_modulation_data,energy_category,filler_words,words_list,greeting_words = analyze_language_and_voice(audio_file_path)
                 # Get speech rate
                 wpm = calculate_speech_rate(audio_file_path)
                 speech_rate = round(wpm,2)
                 monotone = voice_monotone(audio_file_path)
                 pauses = detect_voice_pauses(audio_file_path)
                 language_analysis = language_sentiment_analysis["sentiment"]
+                energy_level,energy_score = energy_category
+                voice_modulation = {"pitch":voice_modulation_data["pitch"],"modulation_rating":voice_modulation_data["modulation_rating"]}
 
                 if len(greeting_words) > 0:
                     greeting = "Greeting included"
@@ -190,6 +192,8 @@ def scan_face(request):
             emotion_not_detected = 0
             eye_contact_detect = 0
             eye_not_contact = 0
+            body_confidence_count = 0
+            not_body_confidence_count = 0
 
             while True:
                 # Capture frames.
@@ -289,10 +293,11 @@ def scan_face(request):
 
                 if confidence:
                     b_confidence = "Confident body posture"
+                    body_confidence_count += 1
                     # Display the posture on the frame
                     cv2.putText(image, f"Posture: {confidence}", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 153, 51 ), 2)
                 else:
-                    pass
+                    not_body_confidence_count += 1
 
                 # Eye Contact detection code start ***********
                 eye_distance, x, y, w, h = eye_contact_detection(image, face_cascade, eye_cascade)
@@ -387,10 +392,15 @@ def scan_face(request):
             else:
                 language_analysis_average = ((language_sentiment_analysis["sentiment_score_average"] + 1.0) / 2) * 100  # 1.0 is added for filler words average to get percentage
                 language_analysis_score = round(language_analysis_average, 2)
-            print("emotion change", language_analysis_score)
-            print("Eye_contact", language_analysis_average)
-            print("facial expression score", language_analysis_score)
 
+            if body_confidence_count > 0:
+                confidence_ratio = body_confidence_count/(body_confidence_count + not_body_confidence_count)
+            else:
+                confidence_ratio = 0.0
+            
+            body_confidence_score = round((confidence_ratio * 100),2)
+
+            voice_modulation_score = (energy_score + voice_modulation_data["percentage_modulation"])/2
 
             total_len = total_detected_time + total_not_detected_time
             ratio = total_detected_time/total_len
@@ -403,9 +413,9 @@ def scan_face(request):
             t_score = get_analysis_score(speech_rate,filler_words,words_list,b_confidence,eye_bling,hand_move,
                                          eye_contact,thanks,greeting,greet_gesture,monotone,pauses,face_detected,body_posture,voice_emo)
             try:
-                data = VideoRecognition(thumb_img= File(open(thumbnail_filename, 'rb')),name=video_file,analysis_score = t_score,language_analysis= language_analysis,voice_modulation_analysis = voice_modulation,energy_level_analysis= energy_category,video_file=video_file, word_per_minute=speech_rate,filler_words_used=filler_words,frequently_used_word=words_list,voice_emotion = voice_emo,
+                data = VideoRecognition(thumb_img= File(open(thumbnail_filename, 'rb')),name=video_file,analysis_score = t_score,language_analysis= language_analysis,voice_modulation_analysis = voice_modulation,energy_level_analysis= energy_level,video_file=video_file, word_per_minute=speech_rate,filler_words_used=filler_words,frequently_used_word=words_list,voice_emotion = voice_emo,
                                         confidence = b_confidence,eye_bling = eye_bling,hand_movement= hand_move,eye_contact=eye_contact,thanks_gesture=thanks,greeting=greeting,greeting_gesture=greet_gesture,voice_tone = monotone,voice_pauses=pauses,appropriate_facial = face_detected,body_posture=body_posture,body_language_score=body_language_score,facial_expression_score=facial_expression_score,
-                                        language_analysis_score=language_analysis_score)
+                                        language_analysis_score=language_analysis_score,voice_modulation_score=voice_modulation_score,body_confidence_score=body_confidence_score)
                 data.save()
                 
             except Exception as e:
@@ -857,11 +867,20 @@ def analyze_voice_modulation(audio_file_path):
     if pitch == float('-inf'):
         pitch = None
 
+    min_pitch = -40
+    max_pitch = 0
+    # Calculate the percentage of voice modulation
+    if pitch is not None:
+        percentage_modulation = (pitch - min_pitch) / (max_pitch - min_pitch) * 100
+        percentage_modulation = max(0, min(100, percentage_modulation))  # Ensure it's within the 0-100 range
+    else:
+        percentage_modulation = 0.0
+
     # You can define your own criteria for rating voice modulation
     if pitch is not None:
         if pitch > -12:
             modulation_rating = "Excellent"
-        elif -12 >= pitch >= -25:
+        elif -12 >= pitch >= -27:
             modulation_rating = "Good"
         else:
             modulation_rating = "Needs Improvement"
@@ -869,10 +888,9 @@ def analyze_voice_modulation(audio_file_path):
         modulation_rating = "Not Available"
 
     return {
-        # "duration_seconds": len(audio) / 1000,  # Duration in seconds
         "pitch": round(pitch,2),  # Pitch in dB
-        "modulation_rating": modulation_rating,
-        # Add more voice modulation characteristics as needed
+        "percentage_modulation": round(percentage_modulation, 2),
+        "modulation_rating": modulation_rating
     }
     
 
@@ -892,13 +910,13 @@ def categorize_energy_level(energy_level):
     # Define thresholds for categorization
     low_threshold = 0.3
     high_threshold = 0.7
-
+    energy_score = round((energy_level * 100),2)
     if energy_level < low_threshold:
-        return "Low"
+        return ("Low",energy_score)
     elif low_threshold <= energy_level < high_threshold:
-        return "Medium"
+        return ("Medium",energy_score)
     else:
-        return "High"
+        return ("High",energy_score)
 
 def generate_audio_file(video_path):
     # Speech recognition setup
@@ -1173,13 +1191,16 @@ def analyse_video(video_file,user):
     try:
         audio_file_path = generate_audio_file(f"{video_file}")
         print(audio_file_path)
-        language_sentiment_analysis, voice_modulation,energy_category,filler_words,words_list,greeting_words = analyze_language_and_voice(audio_file_path)
+        language_sentiment_analysis, voice_modulation_data,energy_category,filler_words,words_list,greeting_words = analyze_language_and_voice(audio_file_path)
         # Get speech rate
         wpm = calculate_speech_rate(audio_file_path)
         speech_rate = round(wpm,2)
         monotone = voice_monotone(audio_file_path)
         pauses = detect_voice_pauses(audio_file_path)
         language_analysis = language_sentiment_analysis["sentiment"]
+        
+        energy_level,energy_score = energy_category
+        voice_modulation = {"pitch":voice_modulation_data["pitch"],"modulation_rating":voice_modulation_data["modulation_rating"]}
     
         if len(greeting_words) > 0:
             greeting = "Greeting included"
@@ -1230,6 +1251,8 @@ def analyse_video(video_file,user):
     emotion_not_detected = 0
     eye_contact_detect = 0
     eye_not_contact = 0 
+    body_confidence_count = 0
+    not_body_confidence_count = 0
 
     while True:
         # Capture frames.
@@ -1319,10 +1342,11 @@ def analyse_video(video_file,user):
             pass
         if confidence:
             b_confidence = "Confident body posture"
+            body_confidence_count += 1
             # Display the posture on the frame
             cv2.putText(image, f"Posture: {confidence}", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 153, 51 ), 2)
         else:
-            pass
+            not_body_confidence_count += 1
         # Eye Contact detection code start ***********
         eye_distance, x, y, w, h = eye_contact_detection(image, face_cascade, eye_cascade)
         eye_contact_threshold = 20  # Example threshold, you may need 
@@ -1396,14 +1420,24 @@ def analyse_video(video_file,user):
         eye_contact_ratio = 0.0
     facial_expression_ratio = (emotion_change_ratio + eye_contact_ratio)/2
     facial_expression_score = round(facial_expression_ratio,2)
-    print(type(language_analysis))
-    print(language_sentiment_analysis)
+
     if not filler_words:
         language_analysis_score = language_sentiment_analysis["sentiment_score_average"] * 100
         language_analysis_average = 0.0
     else:
         language_analysis_average = ((language_sentiment_analysis["sentiment_score_average"] + 1.0) / 2) * 100  # 1.0 is added for filler words average to get percentage
         language_analysis_score = round(language_analysis_average, 2)
+
+    if body_confidence_count > 0:
+        confidence_ratio = body_confidence_count/(body_confidence_count + not_body_confidence_count)
+    else:
+        confidence_ratio = 0.0
+    
+    body_confidence_score = round((confidence_ratio * 100),2)
+
+    voice_modulation_score = (energy_score + voice_modulation_data["percentage_modulation"])/2
+    print(body_confidence_score)
+
     total_len = total_detected_time + total_not_detected_time
     ratio = total_detected_time/total_len
     if ratio > 0.5:
@@ -1415,9 +1449,9 @@ def analyse_video(video_file,user):
     t_score = get_analysis_score(speech_rate,filler_words,words_list,b_confidence,eye_bling,hand_move,
                             eye_contact,thanks,greeting,greet_gesture,monotone,pauses,face_detected,body_posture,voice_emo)           
     try:
-        video_data = VideoRecognition(user=user,thumb_img = File(open(thumbnail_filename, 'rb')),name=video_file,analysis_score = t_score,language_analysis= language_analysis,voice_modulation_analysis = voice_modulation,energy_level_analysis= energy_category,video_file=video_file, word_per_minute=speech_rate,filler_words_used=filler_words,frequently_used_word=words_list,voice_emotion = voice_emo,
+        video_data = VideoRecognition(user=user,thumb_img = File(open(thumbnail_filename, 'rb')),name=video_file,analysis_score = t_score,language_analysis= language_analysis,voice_modulation_analysis = voice_modulation,energy_level_analysis= energy_level,video_file=video_file, word_per_minute=speech_rate,filler_words_used=filler_words,frequently_used_word=words_list,voice_emotion = voice_emo,
                                 confidence = b_confidence,eye_bling = eye_bling,hand_movement= hand_move,eye_contact=eye_contact,thanks_gesture=thanks,greeting=greeting,greeting_gesture=greet_gesture,voice_tone = monotone,voice_pauses=pauses,appropriate_facial = face_detected,body_posture=body_posture,body_language_score=body_language_score,facial_expression_score=facial_expression_score,
-                                language_analysis_score=language_analysis_score)
+                                language_analysis_score=language_analysis_score,voice_modulation_score=voice_modulation_score,body_confidence_score=body_confidence_score)
         video_data.save()
         data = video_data.id
     except Exception as e:
