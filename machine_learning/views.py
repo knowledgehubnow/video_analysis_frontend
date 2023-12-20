@@ -1173,12 +1173,13 @@ def analyse_video(video_file,user):
     try:
         audio_file_path = generate_audio_file(f"{video_file}")
         print(audio_file_path)
-        language_analysis, voice_modulation,energy_category,filler_words,words_list,greeting_words = analyze_language_and_voice(audio_file_path)
+        language_sentiment_analysis, voice_modulation,energy_category,filler_words,words_list,greeting_words = analyze_language_and_voice(audio_file_path)
         # Get speech rate
         wpm = calculate_speech_rate(audio_file_path)
         speech_rate = round(wpm,2)
         monotone = voice_monotone(audio_file_path)
         pauses = detect_voice_pauses(audio_file_path)
+        language_analysis = language_sentiment_analysis["sentiment"]
     
         if len(greeting_words) > 0:
             greeting = "Greeting included"
@@ -1222,7 +1223,14 @@ def analyse_video(video_file,user):
     total_not_detected_time = 0
     # Initialize variables for Body Posture
     good_posture_time = 0
-    bad_posture_time = 0            
+    bad_posture_time = 0   
+    hand_movement_count = 0
+    none_hand_movement_count = 0
+    emotion_change = 0
+    emotion_not_detected = 0
+    eye_contact_detect = 0
+    eye_not_contact = 0 
+
     while True:
         # Capture frames.
         success, image = cap.read()
@@ -1278,10 +1286,10 @@ def analyse_video(video_file,user):
         # Emotion Changes Detection
         predicted_emotion = get_emotion_change(face_cascade,image)
         if predicted_emotion is not None:
-            print("Emotion Changes:", predicted_emotion)
+            emotion_change += 1
             cv2.putText(image, predicted_emotion, (50, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
         else:
-            pass
+            emotion_not_detected += 1
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)               
         # Process the image with MediaPipe Hands
         # Hand Movement, Thanks Geesture and body confidence detection code functions *****************
@@ -1298,10 +1306,11 @@ def analyse_video(video_file,user):
             pass
         if hand_track is not None:
             hand_move = 'Hand Moving'
+            hand_movement_count += 1
             hand_track,x,y = hand_track
             cv2.putText(image, 'Hand Moving', (x, y + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
         else:
-            pass
+            none_hand_movement_count += 1
         if thanks_gesture is not None:
             thanks_gesture,x,y = thanks_gesture
             thanks = "Thanking gesture included"
@@ -1320,7 +1329,10 @@ def analyse_video(video_file,user):
         # Check if eyes are horizontally aligned (within the threshold)
         if eye_distance < eye_contact_threshold:
             eye_contact = 'Eye Contact'
-            cv2.putText(image, 'Eye Contact', (x, y + h - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 233, 51), 2)                
+            eye_contact_detect += 1
+            cv2.putText(image, 'Eye Contact', (x, y + h - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 233, 51), 2) 
+        else:
+            eye_not_contact += 1               
         # Eye Blinging detection code start *************
         blinging_detected = eye_blinging(image)
         if blinging_detected < blink_thresh: 
@@ -1358,17 +1370,40 @@ def analyse_video(video_file,user):
     cap.release()
     video_output.release()
     cv2.destroyAllWindows()
-    body_posture = None
+    # Analysis score detection code start ##################
     if good_posture_time > 0:
-        print(good_posture_time)
-        print(bad_posture_time)
         posture_ratio = good_posture_time/(good_posture_time + bad_posture_time)
         if posture_ratio > 0.5:
             body_posture = "Good Body Posture"
         else:
             body_posture = "Bad Body Posture"
     else:
-        pass
+        posture_ratio = 0.0
+        body_posture = None
+    if hand_movement_count > 0:
+        hand_move_ratio = hand_movement_count / (hand_movement_count + none_hand_movement_count) 
+    else:
+        hand_move_ratio = 0.0
+    body_language_ratio = ((posture_ratio + hand_move_ratio)/2) * 100
+    body_language_score = round(body_language_ratio,2)
+    if emotion_change > 0:
+        emotion_change_ratio = (emotion_change/(emotion_change + emotion_not_detected)) * 100
+    else:
+        emotion_change_ratio = 0.0
+    if eye_contact_detect > 0:
+        eye_contact_ratio = (eye_contact_detect/(eye_contact_detect + eye_not_contact)) * 100
+    else:
+        eye_contact_ratio = 0.0
+    facial_expression_ratio = (emotion_change_ratio + eye_contact_ratio)/2
+    facial_expression_score = round(facial_expression_ratio,2)
+    print(type(language_analysis))
+    print(language_sentiment_analysis)
+    if not filler_words:
+        language_analysis_score = language_sentiment_analysis["sentiment_score_average"] * 100
+        language_analysis_average = 0.0
+    else:
+        language_analysis_average = ((language_sentiment_analysis["sentiment_score_average"] + 1.0) / 2) * 100  # 1.0 is added for filler words average to get percentage
+        language_analysis_score = round(language_analysis_average, 2)
     total_len = total_detected_time + total_not_detected_time
     ratio = total_detected_time/total_len
     if ratio > 0.5:
@@ -1381,7 +1416,8 @@ def analyse_video(video_file,user):
                             eye_contact,thanks,greeting,greet_gesture,monotone,pauses,face_detected,body_posture,voice_emo)           
     try:
         video_data = VideoRecognition(user=user,thumb_img = File(open(thumbnail_filename, 'rb')),name=video_file,analysis_score = t_score,language_analysis= language_analysis,voice_modulation_analysis = voice_modulation,energy_level_analysis= energy_category,video_file=video_file, word_per_minute=speech_rate,filler_words_used=filler_words,frequently_used_word=words_list,voice_emotion = voice_emo,
-                                confidence = b_confidence,eye_bling = eye_bling,hand_movement= hand_move,eye_contact=eye_contact,thanks_gesture=thanks,greeting=greeting,greeting_gesture=greet_gesture,voice_tone = monotone,voice_pauses=pauses,appropriate_facial = face_detected,body_posture=body_posture)
+                                confidence = b_confidence,eye_bling = eye_bling,hand_movement= hand_move,eye_contact=eye_contact,thanks_gesture=thanks,greeting=greeting,greeting_gesture=greet_gesture,voice_tone = monotone,voice_pauses=pauses,appropriate_facial = face_detected,body_posture=body_posture,body_language_score=body_language_score,facial_expression_score=facial_expression_score,
+                                language_analysis_score=language_analysis_score)
         video_data.save()
         data = video_data.id
     except Exception as e:
