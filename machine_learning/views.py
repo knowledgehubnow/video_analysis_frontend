@@ -1569,3 +1569,27 @@ class AnalysedImageListView(APIView):
         all_data = ImageRecognition.objects.all()
         serializer = ImageDataListSerializer(all_data, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+# Analysed video list api code **********************************
+class AnalysedVideoDetailView(APIView):
+    def get(self, request):
+        video_id = request.query_params.get('id', None)
+        if video_id is not None:
+            # Filter data based on the provided video_id
+            video_data = VideoRecognition.objects.get(id=video_id)
+            serializer = VideoDataListSerializer(video_data, many=True)
+            return Response(
+                {
+                    "message":"Data found",
+                    "data":serializer.data,
+                },
+                status=status.HTTP_200_OK
+            )
+        else:
+           return Response(
+                {
+                    "message":"User ID not found",
+                },
+                status=status.HTTP_404_NOT_FOUND
+           )
+            
