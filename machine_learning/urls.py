@@ -16,5 +16,6 @@ urlpatterns = [
     path('upload/', VideoUploadView.as_view()),
     path('image/analysis/', ImageAnalysisView.as_view()),
     path('analysed/video/list/', AnalysedVideoListView.as_view()),
+    path('analysed/video/detail/view/', AnalysedVideoDetailView.as_view()),
     path('analysed/image/list/', AnalysedImageListView.as_view())
 ]
