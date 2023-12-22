@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 import ast
 import json
+from datetime import datetime
 # Create your models here.
 
 
@@ -15,6 +16,7 @@ class ImageRecognition(models.Model):
         return ast.literal_eval(self.dominant_emotion)
 
 class VideoRecognition(models.Model):
+    created_date = models.DateTimeField(auto_now_add=True)
     user = models.BigIntegerField(null = True)
     name = models.CharField(max_length=255, null=True, blank=True)
     thumb_img = models.ImageField(upload_to='thumbnails/', null=True, blank=True)
