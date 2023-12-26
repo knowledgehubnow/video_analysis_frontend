@@ -2,7 +2,8 @@ from django.db import models
 from django.conf import settings
 import ast
 import json
-from datetime import datetime
+from django.utils import timezone
+import pytz
 # Create your models here.
 
 
@@ -16,7 +17,7 @@ class ImageRecognition(models.Model):
         return ast.literal_eval(self.dominant_emotion)
 
 class VideoRecognition(models.Model):
-    created_date = models.DateTimeField(auto_now_add=True)
+    created_date = models.DateTimeField(default=timezone.localtime(timezone.now()))
     user = models.BigIntegerField(null = True)
     name = models.CharField(max_length=255, null=True, blank=True)
     thumb_img = models.ImageField(upload_to='thumbnails/', null=True, blank=True)
@@ -48,7 +49,7 @@ class VideoRecognition(models.Model):
 
     def __str__(self):
         return self.name
-        
+    
 
 class AnalyzePDF(models.Model):
     pdf_name = models.CharField(max_length=255, null=True, blank=True)
