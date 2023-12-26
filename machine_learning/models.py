@@ -3,7 +3,6 @@ from django.conf import settings
 import ast
 import json
 from django.utils import timezone
-import pytz
 # Create your models here.
 
 
@@ -17,7 +16,7 @@ class ImageRecognition(models.Model):
         return ast.literal_eval(self.dominant_emotion)
 
 class VideoRecognition(models.Model):
-    created_date = models.DateTimeField(default=timezone.localtime(timezone.now()))
+    created_date = models.DateTimeField(default=timezone.localtime)
     user = models.BigIntegerField(null = True)
     name = models.CharField(max_length=255, null=True, blank=True)
     thumb_img = models.ImageField(upload_to='thumbnails/', null=True, blank=True)
@@ -31,6 +30,7 @@ class VideoRecognition(models.Model):
     frequently_used_word = models.JSONField(null=True, blank=True)
     voice_emotion = models.JSONField(null=True, blank=True, default=None)
     confidence = models.CharField(max_length=100,null=True, blank=True)
+    facial_expression = models.CharField(max_length=100,null=True, blank=True)
     eye_bling = models.CharField(max_length=100,null=True, blank=True)
     hand_movement = models.CharField(max_length=100,null=True, blank=True)
     eye_contact = models.CharField(max_length=100,null=True, blank=True)

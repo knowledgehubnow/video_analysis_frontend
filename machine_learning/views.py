@@ -195,6 +195,11 @@ def scan_face(request):
             body_confidence_count = 0
             not_body_confidence_count = 0
 
+            # List of possible emotions
+            emotions = ('angry', 'disgust', 'fear', 'happy', 'sad', 'surprise', 'neutral')
+            # Initialize a dictionary to store emotion counts
+            emotion_counts = {emotion: 0 for emotion in emotions}
+
             while True:
                 # Capture frames.
                 success, image = cap.read()
@@ -253,6 +258,14 @@ def scan_face(request):
                 frame = cv2.flip(image, 1)
                 # Emotion Changes Detection
                 predicted_emotion = get_emotion_change(face_cascade,image)
+
+                # Update the count for the detected emotion
+                if predicted_emotion in emotion_counts:
+                    emotion_counts[predicted_emotion] += 1
+                else:
+                    pass
+
+                
                 if predicted_emotion is not None:
                     emotion_change += 1
                     cv2.putText(image, predicted_emotion, (50, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
@@ -353,6 +366,9 @@ def scan_face(request):
             video_output.release()
             cv2.destroyAllWindows()
             
+            # Find the emotion with the maximum count
+            most_frequent_emotion = max(emotion_counts, key=emotion_counts.get)
+
             # Analysis score detection code start ##################
             if good_posture_time > 0:
                 posture_ratio = good_posture_time/(good_posture_time + bad_posture_time)
@@ -413,7 +429,7 @@ def scan_face(request):
             try:
                 data = VideoRecognition(thumb_img= File(open(thumbnail_filename, 'rb')),name=video_file,analysis_score = t_score,language_analysis= language_analysis,voice_modulation_analysis = voice_modulation,energy_level_analysis= energy_level,video_file=video_file, word_per_minute=speech_rate,filler_words_used=filler_words,frequently_used_word=words_list,voice_emotion = voice_emo,
                                         confidence = b_confidence,eye_bling = eye_bling,hand_movement= hand_move,eye_contact=eye_contact,thanks_gesture=thanks,greeting=greeting,greeting_gesture=greet_gesture,voice_tone = monotone,voice_pauses=pauses,appropriate_facial = face_detected,body_posture=body_posture,body_language_score=body_language_score,facial_expression_score=facial_expression_score,
-                                        language_analysis_score=language_analysis_score,voice_modulation_score=voice_modulation_score,body_confidence_score=body_confidence_score)
+                                        language_analysis_score=language_analysis_score,voice_modulation_score=voice_modulation_score,body_confidence_score=body_confidence_score,facial_expression = most_frequent_emotion)
                 data.save()
                 
             except Exception as e:
@@ -1252,6 +1268,11 @@ def analyse_video(video_file,user):
     body_confidence_count = 0
     not_body_confidence_count = 0
 
+    # List of possible emotions
+    emotions = ('angry', 'disgust', 'fear', 'happy', 'sad', 'surprise', 'neutral')
+    # Initialize a dictionary to store emotion counts
+    emotion_counts = {emotion: 0 for emotion in emotions}
+
     while True:
         # Capture frames.
         success, image = cap.read()
@@ -1306,6 +1327,12 @@ def analyse_video(video_file,user):
         frame = cv2.flip(image, 1)
         # Emotion Changes Detection
         predicted_emotion = get_emotion_change(face_cascade,image)
+        # Update the count for the detected emotion
+        if predicted_emotion in emotion_counts:
+            emotion_counts[predicted_emotion] += 1
+        else:
+            pass
+
         if predicted_emotion is not None:
             emotion_change += 1
             cv2.putText(image, predicted_emotion, (50, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
@@ -1392,6 +1419,10 @@ def analyse_video(video_file,user):
     cap.release()
     video_output.release()
     cv2.destroyAllWindows()
+
+    # Find the emotion with the maximum count
+    most_frequent_emotion = max(emotion_counts, key=emotion_counts.get)
+
     # Analysis score detection code start ##################
     if good_posture_time > 0:
         posture_ratio = good_posture_time/(good_posture_time + bad_posture_time)
@@ -1448,7 +1479,7 @@ def analyse_video(video_file,user):
     try:
         video_data = VideoRecognition(user=user,thumb_img = File(open(thumbnail_filename, 'rb')),name=video_file,analysis_score = t_score,language_analysis= language_analysis,voice_modulation_analysis = voice_modulation,energy_level_analysis= energy_level,video_file=video_file, word_per_minute=speech_rate,filler_words_used=filler_words,frequently_used_word=words_list,voice_emotion = voice_emo,
                                 confidence = b_confidence,eye_bling = eye_bling,hand_movement= hand_move,eye_contact=eye_contact,thanks_gesture=thanks,greeting=greeting,greeting_gesture=greet_gesture,voice_tone = monotone,voice_pauses=pauses,appropriate_facial = face_detected,body_posture=body_posture,body_language_score=body_language_score,facial_expression_score=facial_expression_score,
-                                language_analysis_score=language_analysis_score,voice_modulation_score=voice_modulation_score,body_confidence_score=body_confidence_score)
+                                language_analysis_score=language_analysis_score,voice_modulation_score=voice_modulation_score,body_confidence_score=body_confidence_score,facial_expression = most_frequent_emotion)
         video_data.save()
         data = video_data.id
     except Exception as e:
