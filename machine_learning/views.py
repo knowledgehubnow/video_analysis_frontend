@@ -207,7 +207,9 @@ def scan_face(request):
                     print("Null Frames")
                     break
                 # Specify the output thumbnail filename
-                thumbnail_filename = f"thumbnail_{video_file}.jpg"
+                file = str(video_file)
+                thumb = file.replace(".mp4", "")
+                thumbnail_filename = f"thumbnail_{thumb}.jpg"
 
                 # Save the first frame as a thumbnail image
                 cv2.imwrite(thumbnail_filename, image)
@@ -1281,7 +1283,9 @@ def analyse_video(video_file,user):
             break
 
         # Specify the output thumbnail filename
-        thumbnail_filename = f"thumbnail_{video_file}.jpg"
+        file = str(video_file)
+        thumb = file.replace(".mp4", "")
+        thumbnail_filename = f"thumbnail_{thumb}.jpg"
 
         # Save the first frame as a thumbnail image
         cv2.imwrite(thumbnail_filename, image)
