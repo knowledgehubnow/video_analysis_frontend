@@ -17,5 +17,10 @@ urlpatterns = [
     path('image/analysis/', ImageAnalysisView.as_view()),
     path('analysed/video/list/', AnalysedVideoListView.as_view()),
     path('analysed/video/detail/view/', AnalysedVideoDetailView.as_view()),
-    path('analysed/image/list/', AnalysedImageListView.as_view())
+    path('analysed/image/list/', AnalysedImageListView.as_view()),
+
+    path('video_detail/<int:video_id>/',views.video_detail,name = "video_detail"),
+    path('delete/data/',views.delete_data,name = "analyzed_pdf_view"),
+    path('frame/data/',views.frame,name = "frame"),
+    path('get/data/<int:id>/',views.get_data,name = "get_data"),
 ]

@@ -9,6 +9,9 @@
 </head>
 <body>
     <div class="container my-5">
+        <div class="btn-group mb-5" role="group" aria-label="Basic mixed styles example">
+            <a href="{% url 'scan_face' %}"><button type="button" class="btn btn-secondary">Click to Analyze more Video</button></a>
+        </div>
         <div class="row row-cols-1 row-cols-md-3 g-4">
             {% for data in all_data reversed %}
             <div class="col">
@@ -20,7 +23,7 @@
                         </video>
                     </div>
                     <div class="card-body">
-                        <h5 class="card-title">{{ data.name|truncatechars:20 }}</h5>
+                        <a href="{% url "video_detail" data.id %}"><h5 class="card-title">{{ data.name|truncatechars:20 }}</h5></a>
                         <hr>
                         <div class="row">
                             <div class="col-4">

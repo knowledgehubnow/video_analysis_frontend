@@ -46,6 +46,8 @@ import pyaudio
 import threading
 import wave
 from django.core.files import File
+from django.core.files.base import ContentFile
+from PIL import Image
 
 
 mp_pose = mp.solutions.pose
@@ -200,6 +202,9 @@ def scan_face(request):
             # Initialize a dictionary to store emotion counts
             emotion_counts = {emotion: 0 for emotion in emotions}
 
+            # Create a VideoRecognition object and associate it with the video_frame
+            video_recognition = VideoRecognition.objects.create(name=str(video_file))
+
             while True:
                 # Capture frames.
                 success, image = cap.read()
@@ -224,12 +229,11 @@ def scan_face(request):
                     print("Bad Posture Time:", bad_time)
                     if good_time > 0:
                         good_posture_time += good_time
-                        # time_string_good = 'Good Posture Time : ' + str(round(good_time, 1)) + 's'
-                        # cv2.putText(image, time_string_good, (10, h - 20), font, 0.9, green, 2)
+                        save_detected_frame(video_recognition, "good_posture", image)
+
                     else:
                         bad_posture_time += bad_time
-                        # time_string_bad = 'Bad Posture Time : ' + str(round(bad_time, 1)) + 's'
-                        # cv2.putText(image, time_string_bad, (10, h - 20), font, 0.9, red, 2)
+                        save_detected_frame(video_recognition, "bad_posture", image)
 
                 except Exception as e:
                     print(e)
@@ -240,6 +244,7 @@ def scan_face(request):
                 if len(faces) > 0:
                     total_detected_time += time.time() - start_time
                     start_time = time.time()
+                    save_detected_frame(video_recognition, "face_detected", image)
                     for face in faces:
                         # Get facial landmarks
                         landmarks = landmark_predict(gray_frame, face)
@@ -256,6 +261,7 @@ def scan_face(request):
                 else:
                     total_not_detected_time += time.time() - start_time
                     start_time = time.time()
+                    save_detected_frame(video_recognition, "face_not_detected", image)
                 
                 frame = cv2.flip(image, 1)
                 # Emotion Changes Detection
@@ -271,6 +277,7 @@ def scan_face(request):
                 if predicted_emotion is not None:
                     emotion_change += 1
                     cv2.putText(image, predicted_emotion, (50, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+                    save_detected_frame(video_recognition, f"{predicted_emotion}", image)
                 else:
                     emotion_not_detected += 1
                     
@@ -288,31 +295,38 @@ def scan_face(request):
                 if greeting_gesture == "Namaste" or greeting_gesture == "Hi/Hello":
                     greet_gesture = "Greeting gesture included"
                     cv2.putText(image, greeting_gesture, (20, 100), cv2.FONT_HERSHEY_COMPLEX, 0.9, (0, 255, 0), 2)
+                    save_detected_frame(video_recognition, "greeting_gesture", image)
                 else:
-                    pass
+                    save_detected_frame(video_recognition, "no_gesture", image)
 
                 if hand_track is not None:
                     hand_move = 'Hand Moving'
                     hand_movement_count += 1
                     hand_track,x,y = hand_track
                     cv2.putText(image, 'Hand Moving', (x, y + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+                    save_detected_frame(video_recognition, "hand_moving", image)
                 else:
                     none_hand_movement_count += 1
+                    save_detected_frame(video_recognition, "hand_not_moving", image)
 
                 if thanks_gesture is not None:
                     thanks_gesture,x,y = thanks_gesture
                     thanks = "Thanking gesture included"
                     cv2.putText(image, 'Thanks Gesture', (x, y + 30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 0), 2)
+                    save_detected_frame(video_recognition, "thanks", image)
                 else:
-                    pass
+                    save_detected_frame(video_recognition, "no_thanks", image)
 
-                if confidence:
+                if confidence == "Confident":
                     b_confidence = "Confident body posture"
                     body_confidence_count += 1
                     # Display the posture on the frame
                     cv2.putText(image, f"Posture: {confidence}", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 153, 51 ), 2)
+                    save_detected_frame(video_recognition, "confident", image)
                 else:
                     not_body_confidence_count += 1
+                    cv2.putText(image, f"Posture: {confidence}", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 153, 51 ), 2)
+                    save_detected_frame(video_recognition, "unconfident", image)
 
                 # Eye Contact detection code start ***********
                 eye_distance, x, y, w, h = eye_contact_detection(image, face_cascade, eye_cascade)
@@ -322,8 +336,10 @@ def scan_face(request):
                     eye_contact = 'Eye Contact'
                     eye_contact_detect += 1
                     cv2.putText(image, 'Eye Contact', (x, y + h - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 233, 51), 2)
+                    save_detected_frame(video_recognition, "eye_contact", image)
                 else:
                     eye_not_contact += 1
+                    save_detected_frame(video_recognition, "not_contact", image)
 
                 # Eye Blinging detection code start *************
                 blinging_detected = eye_blinging(image)
@@ -341,7 +357,8 @@ def scan_face(request):
                 if elapsed_time >= 5:
                     if blinks_per_minute > 2:
                         eye_bling = "Blink more often"
-                        cv2.putText(image, f'{blinks_per_minute} Blinks in 1 Second', (60, 100), cv2.FONT_HERSHEY_DUPLEX, 1, (0, 0, 255), 1)
+                        save_detected_frame(video_recognition, "more_blinging", image)
+                        cv2.putText(image, f'{blinks_per_minute} Blinks in 5 Second', (60, 100), cv2.FONT_HERSHEY_DUPLEX, 1, (0, 0, 255), 1)
                     blinks_per_minute = 0
                     current_second_start_time = time.time()
 
@@ -426,17 +443,44 @@ def scan_face(request):
                 face_detected = "Appropriate Facial Not Detected."
             
             # Getting Total Video Ana;ysis Score ####################
-            t_score = get_analysis_score(speech_rate,filler_words,words_list,b_confidence,eye_bling,hand_move,
-                                         eye_contact,thanks,greeting,greet_gesture,monotone,pauses,face_detected,body_posture,voice_emo)
+            t_score = get_analysis_score(body_language_score,facial_expression_score,voice_modulation_score,body_confidence_score,language_analysis_score)
             try:
-                data = VideoRecognition(thumb_img= File(open(thumbnail_filename, 'rb')),name=video_file,analysis_score = t_score,language_analysis= language_analysis,voice_modulation_analysis = voice_modulation,energy_level_analysis= energy_level,video_file=video_file, word_per_minute=speech_rate,filler_words_used=filler_words,frequently_used_word=words_list,voice_emotion = voice_emo,
-                                        confidence = b_confidence,eye_bling = eye_bling,hand_movement= hand_move,eye_contact=eye_contact,thanks_gesture=thanks,greeting=greeting,greeting_gesture=greet_gesture,voice_tone = monotone,voice_pauses=pauses,appropriate_facial = face_detected,body_posture=body_posture,body_language_score=body_language_score,facial_expression_score=facial_expression_score,
-                                        language_analysis_score=language_analysis_score,voice_modulation_score=voice_modulation_score,body_confidence_score=body_confidence_score,facial_expression = most_frequent_emotion)
-                data.save()
+                # Update the fields with new data
+                video_recognition.thumb_img = File(open(thumbnail_filename, 'rb'))
+                video_recognition.analysis_score = t_score
+                video_recognition.language_analysis = language_analysis
+                video_recognition.voice_modulation_analysis = voice_modulation
+                video_recognition.energy_level_analysis = energy_level
+                video_recognition.video_file = video_file
+                video_recognition.word_per_minute = speech_rate
+                video_recognition.filler_words_used = filler_words
+                video_recognition.frequently_used_word = words_list
+                video_recognition.voice_emotion = voice_emo
+                video_recognition.confidence = b_confidence
+                video_recognition.eye_bling = eye_bling
+                video_recognition.hand_movement = hand_move
+                video_recognition.eye_contact = eye_contact
+                video_recognition.thanks_gesture = thanks
+                video_recognition.greeting = greeting
+                video_recognition.greeting_gesture = greet_gesture
+                video_recognition.voice_tone = monotone
+                video_recognition.voice_pauses = pauses
+                video_recognition.appropriate_facial = face_detected
+                video_recognition.body_posture = body_posture
+                video_recognition.body_language_score = body_language_score
+                video_recognition.facial_expression_score = facial_expression_score
+                video_recognition.language_analysis_score = language_analysis_score
+                video_recognition.voice_modulation_score = voice_modulation_score
+                video_recognition.body_confidence_score = body_confidence_score
+                video_recognition.facial_expression = most_frequent_emotion
+
+                # Save the updated object
+                video_recognition.save()
                 
             except Exception as e:
                 print(e)
                 pass
+
             try:
                 os.remove(f"{video_file}")
                 os.remove(f"output_{video_file}")
@@ -444,7 +488,7 @@ def scan_face(request):
                 os.remove(thumbnail_filename)
             except:
                 pass
-            return redirect("analized_video_detail",data.id)
+            return redirect("analized_video_detail",video_recognition.id)
         else:
             os.remove(f"{video_file}")
             return render(request, 'upload.html', {
@@ -455,48 +499,33 @@ def scan_face(request):
 
     return render(request, 'upload.html')
 
+def save_detected_frame(video_recognition_obj, detected_data, image_frame):
+    # Convert the frame to a JPEG image
+    pil_image = Image.fromarray(cv2.cvtColor(image_frame, cv2.COLOR_BGR2RGB))
+    buffer = BytesIO()
+    pil_image.save(buffer, format="JPEG")
+    frame_image = ContentFile(buffer.getvalue(), f"{detected_data}_frame_{video_recognition_obj.id}.jpg")
 
-def get_analysis_score(speech_rate, filler_words, words_list, b_confidence, eye_bling, hand_move,
-                       eye_contact, thanks, greeting, greet_gesture, monotone, pauses, face_detected, body_posture,voice_emo):
+    # Assuming video_recognition_obj is an instance of VideoRecognition
+    try:
+        # Get or create the posture associated with the video
+        posture, created = Posture.objects.get_or_create(video=video_recognition_obj, name=detected_data)
+        
+        # Get or create the DetectedFrames instance for that Posture
+        detected_frame, created = DetectedFrames.objects.get_or_create(posture=posture)
+    except Exception as e:
+        print(f"Error: {e}")
+        return
 
-    negative_point_data = 0
+    # Add the frame to the many-to-many relationship
+    frame, created = Frame.objects.get_or_create(image=frame_image)
+    detected_frame.frames.add(frame)
 
-    if speech_rate == 0.0:
-        negative_point_data += 1
-    if not filler_words:
-        negative_point_data += 1
-    if not words_list:
-        negative_point_data += 1
-    if b_confidence == "Not confident body posture":
-        negative_point_data += 1
-    if eye_bling == "Blink more often":
-        negative_point_data += 1
-    if hand_move is None:
-        negative_point_data += 1
-    if eye_contact is None:
-        negative_point_data += 1
-    if thanks is None:
-        negative_point_data += 1
-    if greeting is None:
-        negative_point_data += 1
-    if greet_gesture is None:
-        negative_point_data += 1
-    if monotone == "Voice is monotone.":
-        negative_point_data += 1
-    if pauses == "Pauses seem unnatural":
-        negative_point_data += 1
-    if face_detected == "Appropriate Facial Not Detected.":
-        negative_point_data += 1
-    if body_posture is None or body_posture == "Bad Body Posture":
-        negative_point_data += 1
-    if not voice_emo:
-        negative_point_data += 1
 
-    print(negative_point_data)
-    percentage = (negative_point_data / 15) * 100
-    round_percentage = round(percentage, 2)
-    score = 100 - round_percentage
-    return score  # Invert the score to get a percentage
+def get_analysis_score(body_language_score,facial_expression_score,voice_modulation_score,body_confidence_score,language_analysis_score):
+    average = (body_language_score + facial_expression_score + voice_modulation_score + body_confidence_score + language_analysis_score)/5
+    
+    return round(average,2)  # Invert the score to get a percentage
 
 
 def eye_blinging(image):
@@ -1275,6 +1304,9 @@ def analyse_video(video_file,user):
     # Initialize a dictionary to store emotion counts
     emotion_counts = {emotion: 0 for emotion in emotions}
 
+    # Create a VideoRecognition object and associate it with the video_frame
+    video_recognition = VideoRecognition.objects.create(name=str(video_file))
+
     while True:
         # Capture frames.
         success, image = cap.read()
@@ -1299,13 +1331,13 @@ def analyse_video(video_file,user):
             print("Good Posture Time:", good_time)
             print("Bad Posture Time:", bad_time)
             if good_time > 0:
+                save_detected_frame(video_recognition, "good_posture", image)
                 good_posture_time += good_time
-                # time_string_good = 'Good Posture Time : ' + str(round(good_time, 1)) + 's'
-                # cv2.putText(image, time_string_good, (10, h - 20), font, 0.9, green, 2)
+
             else:
                 bad_posture_time += bad_time
-                # time_string_bad = 'Bad Posture Time : ' + str(round(bad_time, 1)) + 's'
-                # cv2.putText(image, time_string_bad, (10, h - 20), font, 0.9, red, 2)
+                save_detected_frame(video_recognition, "bad_posture", image)
+
         except Exception as e:
             print(e)
         gray_frame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -1314,6 +1346,7 @@ def analyse_video(video_file,user):
         if len(faces) > 0:
             total_detected_time += time.time() - start_time
             start_time = time.time()
+            save_detected_frame(video_recognition, "face_detected", image)
             for face in faces:
                 # Get facial landmarks
                 landmarks = landmark_predict(gray_frame, face)
@@ -1327,7 +1360,8 @@ def analyse_video(video_file,user):
                 cv2.rectangle(image, (x, y), (x+w, y+h), (255, 0, 0), 2)
         else:
             total_not_detected_time += time.time() - start_time
-            start_time = time.time()                
+            start_time = time.time()     
+            save_detected_frame(video_recognition, "face_not_detected", image)           
         frame = cv2.flip(image, 1)
         # Emotion Changes Detection
         predicted_emotion = get_emotion_change(face_cascade,image)
@@ -1340,6 +1374,7 @@ def analyse_video(video_file,user):
         if predicted_emotion is not None:
             emotion_change += 1
             cv2.putText(image, predicted_emotion, (50, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+            save_detected_frame(video_recognition, f"{predicted_emotion}", image)
         else:
             emotion_not_detected += 1
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)               
@@ -1354,28 +1389,36 @@ def analyse_video(video_file,user):
         if greeting_gesture == "Namaste" or greeting_gesture == "Hi/Hello":
             greet_gesture = "Greeting gesture included"
             cv2.putText(image, greeting_gesture, (20, 100), cv2.FONT_HERSHEY_COMPLEX, 0.9, (0, 255, 0), 2)
+            save_detected_frame(video_recognition, "greeting_gesture", image)
         else:
-            pass
+            save_detected_frame(video_recognition, "no_gesture", image)
         if hand_track is not None:
             hand_move = 'Hand Moving'
             hand_movement_count += 1
             hand_track,x,y = hand_track
             cv2.putText(image, 'Hand Moving', (x, y + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+            save_detected_frame(video_recognition, "hand_moving", image)
         else:
             none_hand_movement_count += 1
+            save_detected_frame(video_recognition, "hand_not_moving", image)
+
         if thanks_gesture is not None:
             thanks_gesture,x,y = thanks_gesture
             thanks = "Thanking gesture included"
             cv2.putText(image, 'Thanks Gesture', (x, y + 30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 0), 2)
+            save_detected_frame(video_recognition, "thanks", image)
         else:
-            pass
-        if confidence:
+            save_detected_frame(video_recognition, "no_thanks", image)
+        if confidence == "Confident":
             b_confidence = "Confident body posture"
             body_confidence_count += 1
             # Display the posture on the frame
             cv2.putText(image, f"Posture: {confidence}", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 153, 51 ), 2)
+            save_detected_frame(video_recognition, "confident", image)
         else:
             not_body_confidence_count += 1
+            cv2.putText(image, f"Posture: {confidence}", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 153, 51 ), 2)
+            save_detected_frame(video_recognition, "unconfident", image)
         # Eye Contact detection code start ***********
         eye_distance, x, y, w, h = eye_contact_detection(image, face_cascade, eye_cascade)
         eye_contact_threshold = 20  # Example threshold, you may need 
@@ -1384,8 +1427,10 @@ def analyse_video(video_file,user):
             eye_contact = 'Eye Contact'
             eye_contact_detect += 1
             cv2.putText(image, 'Eye Contact', (x, y + h - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 233, 51), 2) 
+            save_detected_frame(video_recognition, "eye_contact", image)
         else:
-            eye_not_contact += 1               
+            eye_not_contact += 1     
+            save_detected_frame(video_recognition, "not_contact", image)          
         # Eye Blinging detection code start *************
         blinging_detected = eye_blinging(image)
         if blinging_detected < blink_thresh: 
@@ -1401,7 +1446,8 @@ def analyse_video(video_file,user):
         if elapsed_time >= 5:
             if blinks_per_minute > 2:
                 eye_bling = "Blink more often"
-                cv2.putText(image, f'{blinks_per_minute} Blinks in 1 Second', (60, 100), cv2.FONT_HERSHEY_DUPLEX, 1, (0, 0, 255), 1)
+                cv2.putText(image, f'{blinks_per_minute} Blinks in 5 Second', (60, 100), cv2.FONT_HERSHEY_DUPLEX, 1, (0, 0, 255), 1)
+                save_detected_frame(video_recognition, "more_blinging", image)
             blinks_per_minute = 0
             current_second_start_time = time.time()
         # Eye Blinging detection code start *************
@@ -1478,17 +1524,41 @@ def analyse_video(video_file,user):
         face_detected = "Appropriate Facial Not Detected." 
 
     # Getting Total Video Analysis Score ####################
-    t_score = get_analysis_score(speech_rate,filler_words,words_list,b_confidence,eye_bling,hand_move,
-                            eye_contact,thanks,greeting,greet_gesture,monotone,pauses,face_detected,body_posture,voice_emo)           
+    t_score = get_analysis_score(body_language_score,facial_expression_score,voice_modulation_score,body_confidence_score,language_analysis_score)   
     try:
-        video_data = VideoRecognition(user=user,thumb_img = File(open(thumbnail_filename, 'rb')),name=video_file,analysis_score = t_score,language_analysis= language_analysis,voice_modulation_analysis = voice_modulation,energy_level_analysis= energy_level,video_file=video_file, word_per_minute=speech_rate,filler_words_used=filler_words,frequently_used_word=words_list,voice_emotion = voice_emo,
-                                confidence = b_confidence,eye_bling = eye_bling,hand_movement= hand_move,eye_contact=eye_contact,thanks_gesture=thanks,greeting=greeting,greeting_gesture=greet_gesture,voice_tone = monotone,voice_pauses=pauses,appropriate_facial = face_detected,body_posture=body_posture,body_language_score=body_language_score,facial_expression_score=facial_expression_score,
-                                language_analysis_score=language_analysis_score,voice_modulation_score=voice_modulation_score,body_confidence_score=body_confidence_score,facial_expression = most_frequent_emotion)
-        video_data.save()
-        data = video_data.id
+        # Update the fields with new data
+        video_recognition.thumb_img = File(open(thumbnail_filename, 'rb'))
+        video_recognition.analysis_score = t_score
+        video_recognition.language_analysis = language_analysis
+        video_recognition.voice_modulation_analysis = voice_modulation
+        video_recognition.energy_level_analysis = energy_level
+        video_recognition.video_file = video_file
+        video_recognition.word_per_minute = speech_rate
+        video_recognition.filler_words_used = filler_words
+        video_recognition.frequently_used_word = words_list
+        video_recognition.voice_emotion = voice_emo
+        video_recognition.confidence = b_confidence
+        video_recognition.eye_bling = eye_bling
+        video_recognition.hand_movement = hand_move
+        video_recognition.eye_contact = eye_contact
+        video_recognition.thanks_gesture = thanks
+        video_recognition.greeting = greeting
+        video_recognition.greeting_gesture = greet_gesture
+        video_recognition.voice_tone = monotone
+        video_recognition.voice_pauses = pauses
+        video_recognition.appropriate_facial = face_detected
+        video_recognition.body_posture = body_posture
+        video_recognition.body_language_score = body_language_score
+        video_recognition.facial_expression_score = facial_expression_score
+        video_recognition.language_analysis_score = language_analysis_score
+        video_recognition.voice_modulation_score = voice_modulation_score
+        video_recognition.body_confidence_score = body_confidence_score
+        video_recognition.facial_expression = most_frequent_emotion
+        # Save the updated object
+        video_recognition.save() 
+        data = video_recognition.id              
     except Exception as e:
-        data = None
-        pass
+        data = None       
     try:
         os.remove(f"{video_file}")
         os.remove(f"output_{video_file}")
@@ -1628,3 +1698,56 @@ class AnalysedVideoDetailView(APIView):
                 status=status.HTTP_404_NOT_FOUND
            )
             
+def delete_data(request):
+    data = Frame.objects.all()
+    data = Posture.objects.all()
+    data = DetectedFrames.objects.all()
+    data = VideoRecognition.objects.all()
+    data.delete()
+    return HttpResponse("Success")
+
+def video_detail(request,video_id):
+    video = VideoRecognition.objects.get(id=video_id)
+    if request.method == "POST":
+        posture_name = request.POST.get("posture")
+        posture = Posture.objects.filter(video=video,name = posture_name)
+        print(posture)
+
+    return render(request,"detail.html",{
+        "video_data":video
+    })
+
+from django.http import JsonResponse
+from django.urls import reverse
+def frame(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            video_id = data.get("id")
+            posture_name = data.get("posture")
+            
+            video = VideoRecognition.objects.get(id=video_id)
+            posture = Posture.objects.get(video=video, name=posture_name)
+            detected_frames = DetectedFrames.objects.get(posture=posture)
+            print(detected_frames)
+            # Construct the redirect URL dynamically
+            redirect_url = reverse('get_data', kwargs={'id': detected_frames.id})
+
+            # Return JSON response with the data
+            return JsonResponse({
+                "redirect_url": redirect_url
+            })
+        except Exception as e:
+            print(str(e))  # Print the error for debugging
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return render(request, "detail.html")
+
+def get_data(request,id):
+    detected_frames = DetectedFrames.objects.get(id=id)
+    video = detected_frames.posture.video.id
+    print(video)
+    return render(request,"frames.html",{
+        "frame_data":detected_frames,
+        "video_id":video
+    })

@@ -50,6 +50,26 @@ class VideoRecognition(models.Model):
     def __str__(self):
         return self.name
     
+    
+class Posture(models.Model):
+    video = models.ForeignKey(VideoRecognition, on_delete=models.CASCADE)
+    name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.name
+
+class DetectedFrames(models.Model):
+    posture = models.ForeignKey(Posture, on_delete=models.CASCADE)
+    frames = models.ManyToManyField('Frame', blank=True)
+
+    def __str__(self):
+        return self.posture.name
+
+class Frame(models.Model):
+    image = models.ImageField(upload_to='frames/', null=True, blank=True)
+
+    def __str__(self):
+        return f"Frame {self.pk}"   
 
 class AnalyzePDF(models.Model):
     pdf_name = models.CharField(max_length=255, null=True, blank=True)
