@@ -23,7 +23,7 @@
                         </video>
                     </div>
                     <div class="card-body">
-                        <a href="{% url "video_detail" data.id %}"><h5 class="card-title">{{ data.name|truncatechars:20 }}</h5></a>
+                        {% comment %} <a href="{% url "video_detail" data.id %}"><h5 class="card-title">{{ data.name|truncatechars:20 }}</h5></a> {% endcomment %}
                         <hr>
                         <div class="row">
                             <div class="col-4">
